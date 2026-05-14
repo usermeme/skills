@@ -7,6 +7,10 @@ description: TypeScript-specific best practices, type definitions, and coding pa
 
 This skill defines the TypeScript-specific standards and patterns for the workspace.
 
+## Conflict Resolution
+
+- If this skill's instructions conflict with project-specific instructions or existing project patterns, the **Project-Specific standards always take priority**.
+
 ## Core Definitions
 
 - **Interfaces:** Use for defining the shape of Objects and Classes.

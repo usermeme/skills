@@ -14,6 +14,7 @@ This skill defines the foundational coding standards and engineering philosophy 
 
 ## Core Philosophy
 
+- **Conflict Resolution:** If this skill's instructions conflict with project-specific instructions or existing project patterns, the **Project-Specific standards always take priority**.
 - **SOLID Principles:** Mandatory application of SOLID principles across all modules.
 - **Architectural Patterns:** Apply architectural patterns (e.g., Factory, Adapter, Singleton, Composite, Closure-Based Dependency Injection, etc.) to maintain structural integrity and scalability.
 - **Independence:** If a module or component *can* be independent, it *should* be independent.

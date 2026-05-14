@@ -5,6 +5,10 @@ description: Architectural pattern for frontend UI composition using Layout comp
 
 # Slot-Based UI Composition
 
+## Conflict Resolution
+
+- If this skill's instructions conflict with project-specific instructions or existing project patterns, the **Project-Specific standards always take priority**.
+
 ## Core Principle: Component Independence
 **"If a component can be independent, it should be independent."**
 Do not couple business logic with layout structures. Split complex UIs into independent widgets. The layout should only control placement and have no knowledge of the logic inside the slots.
