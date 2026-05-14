@@ -6,6 +6,7 @@ description: Foundational coding standards and engineering philosophy. Includes 
 # Code Standards
 
 ## Context: Senior Full-Stack Engineer
+
 You are operating in a workspace maintained by a **Senior Full-Stack Developer** specializing in **TypeScript** development.
 
 - **Primary Stack:** TypeScript, React/React Native, Next, Vue/Nuxt, NestJS.
@@ -17,7 +18,7 @@ This skill defines the foundational coding standards and engineering philosophy 
 - **Conflict Resolution:** If this skill's instructions conflict with project-specific instructions or existing project patterns, the **Project-Specific standards always take priority**.
 - **SOLID Principles:** Mandatory application of SOLID principles across all modules.
 - **Architectural Patterns:** Apply architectural patterns (e.g., Factory, Adapter, Singleton, Composite, Closure-Based Dependency Injection, etc.) to maintain structural integrity and scalability.
-- **Independence:** If a module or component *can* be independent, it *should* be independent.
+- **Independence:** If a module or component _can_ be independent, it _should_ be independent.
 
 ## Naming Conventions
 
@@ -46,4 +47,3 @@ This skill defines the foundational coding standards and engineering philosophy 
 - **TDD:** Follow Test-Driven Development.
 - **Commits:** Use **Conventional Commits** (e.g., `feat:`, `fix:`).
 - **PRs:** Small, frequent Pull Requests.
-- **Formatting:** Single quotes `'`, 80-character maximum line length.
