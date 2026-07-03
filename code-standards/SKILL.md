@@ -1,69 +1,81 @@
 ---
 name: code-standards
-description: Enforces high-quality software engineering principles, clean code patterns, and descriptive naming conventions. Use when writing or refactoring code to ensure adherence to SOLID principles and project standards.
+description: Foundational engineering standards for this workspace — SOLID, clean code, naming, module organization, error handling, plus TypeScript, React, and slot-based UI composition guidance. Use whenever writing, reviewing, or refactoring code in any language, even for small edits — it defines the naming, file structure, typing, and component patterns every change must follow. For TypeScript, React, or Vue work, also read the matching file in references/.
 ---
 
 # Code Standards
 
-## Context: Senior Full-Stack Engineer
+Foundational coding standards for a workspace maintained by a senior full-stack engineer specializing in TypeScript. The goal behind every rule here is the same: code that another senior engineer can read once and immediately understand.
 
-You are operating in a workspace maintained by a **Senior Full-Stack Developer** specializing in **TypeScript** development.
+**Precedence**: Project-specific instructions and existing project patterns always override this skill. Consistency within a codebase beats consistency with this document.
 
-This skill defines the foundational coding standards and engineering philosophy expected in this workspace.
+## Language & Framework References
 
-## 1. Core Philosophy
+Read the relevant reference **before** writing code in that domain:
 
-- **Conflict Resolution**: If this skill's instructions conflict with project-specific instructions or existing project patterns, the **Project-Specific standards always take priority**.
-- **SOLID Principles**: Mandatory application of SOLID principles across all modules.
-- **Architectural Patterns**: Apply architectural patterns (e.g., Factory, Adapter, Singleton, Composite, Closure-Based Dependency Injection, etc.) to maintain structural integrity and scalability.
-- **Independence**: If a module or component *can* be independent, it *should* be independent.
+| Working on… | Read |
+|---|---|
+| TypeScript (any code in `.ts`/`.tsx`) | [references/typescript.md](references/typescript.md) |
+| React components or hooks | [references/react.md](references/react.md) |
+| Page layouts, dashboards, reusable UI composition (React or Vue) | [references/slot-based-layout.md](references/slot-based-layout.md) |
 
-## 2. SOLID Principles
+## Core Philosophy
 
-- **Single Responsibility (SRP)**: A function or component should do ONE thing.
-  - _Bad_: A getter that also updates state/history (`getNextNotificationText`).
-  - _Good_: A getter that returns text, and a separate effect/callback that updates history.
-- **Open/Closed**: Software entities should be open for extension but closed for modification.
-- **Liskov Substitution**: Objects of a superclass should be replaceable with objects of its subclasses without breaking the application.
-- **Interface Segregation**: Prefer many client-specific interfaces over one general-purpose interface.
-- **Dependency Inversion**: Depend on abstractions, not concretions.
+- **Independence**: If a module or component *can* be independent, it *should* be independent. Independent units are easier to test, reuse, and delete.
+- **Explicit over implicit**: Prefer clear naming and visible data flow over "clever" or hidden logic. Cleverness costs every future reader more than it saved the author.
+- **Design patterns are tools, not goals**: Apply patterns (Factory, Adapter, Composite, closure-based dependency injection) when they solve a real structural problem. Avoid Singletons except for genuinely global, stateless concerns — shared mutable singletons hide dependencies and break test isolation.
 
-## 3. Clean Code Patterns
+## SOLID Principles
 
-- **DRY (Don't Repeat Yourself)**: Abstract common logic into shared hooks or utils.
-- **Explicit over Implicit**: Prefer explicit types and clear naming over "clever" or hidden logic.
-- **Descriptive Naming**: NEVER use short, cryptic variable names (e.g., `e`, `t`, `i`, `val`, `data`). Use descriptive names that convey the variable's purpose (e.g., `event`, `translation`, `index`, `exerciseValue`, `completedExercises`).
-- **Guard Clauses**: Always use early returns to avoid nesting.
+Apply SOLID across all modules:
 
-## 4. Naming Conventions
+- **Single Responsibility**: A function or component does ONE thing.
+  - _Bad_: a getter that also updates state/history (`getNextNotificationText` that mutates history).
+  - _Good_: a getter that returns text, plus a separate effect/callback that updates history.
+- **Open/Closed**: Extend behavior through composition and configuration, not by editing stable modules.
+- **Liskov Substitution**: A subtype must be usable anywhere its base type is expected without surprises.
+- **Interface Segregation**: Prefer several small, client-specific interfaces over one general-purpose one.
+- **Dependency Inversion**: Depend on abstractions, not concretions — pass dependencies in rather than importing them deep inside.
 
-- **Variables & Functions:** Always use `camelCase`.
-- **Classes, Interfaces, & Types:** Always use `PascalCase`.
-- **Booleans:** Adjectives describing the state (Best: `opened`, `completed`; Good: `isVisible`).
-- **No Prefixes:** No `I` or `T` prefixes for types/interfaces.
+## Clean Code
 
-## 5. Organization & Modularity
+- **DRY**: Extract logic shared by two or more call sites into hooks or utils. Don't abstract prematurely on the first occurrence — wrong abstractions cost more than duplication.
+- **Guard clauses**: Use early returns to keep the happy path un-nested.
+- **Side-effect-free getters**: Anything named `get…` or returning a value must not mutate state or trigger side effects. Retrieval and mutation are always separate functions.
 
-- **Alphabetical Sorting**: Mandatory for imports, exports, and destructuring.
-- **Module Decomposition**: Modules should be as small as possible.
-- **Soft Limit**: Keep files under 200 lines. Evaluate for decomposition if exceeded.
-- **File Structure**: Folder-per-module structure (e.g., `Component/Component.tsx`, `Component/utils/util.ts`).
-- **Exports**: Always use **Named Exports**.
+## Naming
 
-## 6. Implementation Guidelines
+- **Variables & functions**: `camelCase`. **Classes, interfaces, types**: `PascalCase`. No `I`/`T` prefixes.
+- **Descriptive names, always**: Never `e`, `t`, `i`, `val`, `data`. Write `event`, `translation`, `index`, `exerciseValue`, `completedExercises`. The name should make a comment unnecessary.
+- **Booleans**: Adjectives describing state — best: `opened`, `completed`, `visible`; acceptable: `isVisible`, `hasErrors`.
 
-- **Arrow Functions**: Prefer `const myFunction = () => {}` over `function`.
-- **Async/Await**: Always use `async/await` instead of `.then()`.
-- **Parallelism**: Use `Promise.all` for independent async tasks.
+## Organization & Modularity
 
-## 7. Testing & Quality
+- **Named exports only** — they survive renames, enable reliable find-references, and keep imports honest.
+- **Alphabetical sorting** for imports, exports, and destructuring — removes merge conflicts and bike-shedding about order.
+- **Small modules**: Keep files under ~200 lines (soft limit). When exceeded, evaluate for decomposition rather than mechanically splitting.
+- **Folder-per-module**: `Component/Component.tsx`, `Component/utils/formatLabel.ts`.
 
-- **TDD**: Follow Test-Driven Development.
-- **Commits**: Use **Conventional Commits** (e.g., `feat:`, `fix:`).
-- **PRs**: Small, frequent Pull Requests.
+## Error Handling
 
-## Workflow
+- Model **expected failures** as data, not exceptions: return a discriminated union (`{ status: 'success', value } | { status: 'error', error }`) so callers are forced to handle both branches.
+- Reserve `throw` for genuinely exceptional, unrecoverable situations (programming errors, broken invariants).
+- Never swallow errors silently — handle, propagate, or log with context.
 
-1. **Self-Audit**: Before concluding a task, review your new functions. Do they violate SRP?
-2. **Refactor**: If a function handles both "calculation" and "storage", split them immediately.
-3. **Verify**: Ensure that the code remains readable and that another "senior engineer" would immediately understand the intent.
+## Implementation Defaults
+
+- **Arrow functions**: `const myFunction = () => {}` over `function` declarations.
+- **`async/await`** over `.then()` chains.
+- **`Promise.all`** for independent async work — never await sequentially what can run in parallel.
+
+## Testing & Delivery
+
+- **TDD**: Write the failing test first when the behavior is well-defined; at minimum, every bug fix starts with a test that reproduces it.
+- **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `chore:`, ….
+- **Small, frequent PRs** — reviewable in one sitting.
+
+## Self-Audit Before Finishing
+
+1. Do any new functions violate SRP (e.g., calculate **and** store)? Split them.
+2. Are all names descriptive enough that a comment isn't needed?
+3. Would another senior engineer understand the intent on first read?

@@ -1,31 +1,31 @@
 ---
 name: critical-thinking
-description: Defines the intellectual mindset required for engineering, prioritizing accuracy and architectural integrity over speed. Use when handling complex tasks, ambiguous requirements, or whenever a "second opinion" or rigorous fact-checking is needed.
+description: Engineering mindset that prioritizes accuracy and architectural integrity over speed — verify before acting, challenge weak plans, surface inconsistencies. Use for complex or ambiguous tasks, when debugging based on assumptions, when the user provides "facts" worth verifying, or whenever a second opinion or rigorous fact-check is needed.
 ---
 
-# Critical Thinking & Accuracy Skill
+# Critical Thinking & Accuracy
 
-This skill defines the intellectual mindset required for engineering in this workspace. Accuracy and architectural integrity take absolute precedence over speed or following instructions blindly.
+Accuracy and architectural integrity take precedence over speed and over following instructions blindly. A confident wrong answer costs far more than a short delay to verify — the user acts on what you say.
 
 ## 1. Never Guess
 
-- **Zero-Tolerance for Assumptions**: If you are unsure about a file path, a library's behavior, a project convention, or a requirement, **STOP**.
-- **Tool-First Verification**: Always use `grep_search`, `read_file`, or `list_directory` to verify facts. If the tools don't give you the answer, ask the user.
-- **Admit Ignorance**: It is always better to say "I don't know how this works yet, let me investigate" than to provide a plausible but incorrect guess.
+- If unsure about a file path, a library's behavior, a project convention, or a requirement — **verify before writing code**. Search the codebase, read the actual file, check the installed package version. Plausible-sounding recall is not evidence.
+- If the tools can't answer it, say so and ask. "I don't know how this works yet, let me investigate" always beats a plausible but incorrect guess.
 
-## 2. Healthy Skepticism & Doubt
+## 2. Healthy Skepticism
 
-- **Question Everything**: Even if the user provides a "fact" or a "solution," verify it against the codebase. The user might be mistaken about a path, a variable name, or a previous decision.
-- **Challenge the Plan**: If you think a proposed plan violates SOLID, project standards, or will lead to technical debt, you MUST voice your concern and propose a better alternative.
-- **Verify User Hints**: Treat user hints as high-priority advice, but cross-reference them with the actual code before implementing.
+- **Verify user-provided facts against the codebase.** Users misremember paths, variable names, and past decisions. Treat hints as high-priority leads, not ground truth — cross-reference before implementing.
+- **Challenge the plan.** If a proposed approach violates SOLID, project standards, or creates technical debt, say so explicitly and propose a better alternative with reasoning. Silent compliance with a bad plan is a failure, not politeness.
+- **Question your own conclusions too.** Before acting on a diagnosis, check that the evidence supports *this specific* cause — symptoms that pattern-match a known failure often have a different root.
 
-## 3. Communication & Clarification
+## 3. Ambiguity & Inconsistencies
 
-- **Ask Before Acting**: If a task is ambiguous or underspecified, do not start implementing "your version" of it. Ask clarifying questions until you have a 100% clear mental model.
-- **Point Out Inconsistencies**: If you find a conflict between two rules, two files, or a rule and the user's request, highlight it immediately.
+- When a task is genuinely ambiguous and the choice materially changes the outcome, ask before implementing "your version" of it.
+- When the ambiguity is minor, make the most reasonable assumption, **state it explicitly**, and proceed — don't stall progress on trivia.
+- If two rules, two files, or a rule and the user's request conflict, surface the conflict immediately rather than silently picking a side.
 
-## Workflow
+## Pre-Edit Checklist
 
-1. **Fact Check**: Before every major edit, confirm the target symbols and logic exist exactly as you expect.
-2. **Sanity Check**: Does this change actually make sense in the broader context of the app?
-3. **Query Mode**: If you find yourself about to write code you're not 100% sure about, stop and ask the user.
+1. **Fact check**: Do the target symbols, files, and behaviors exist exactly as I expect? Confirmed with tools, not memory?
+2. **Sanity check**: Does this change make sense in the broader context of the app?
+3. **Confidence check**: Am I about to write code I'm not sure about? Stop — investigate or ask.
