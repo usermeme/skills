@@ -13,6 +13,13 @@ A collection of agent skills reflecting the engineering standards and patterns o
 - `advising/` — Second opinions from independent agents: when to consult (expensive-to-reverse decisions, stuck loops, findings you'll assert), how to brief an advisor without contaminating it, adversarial-verification and judge-panel patterns, environment mappings (Claude Code subagents, Antigravity Agent Manager).
 - `testing/` — Tests that catch real regressions: behavior-first testing through public interfaces, what deserves a test, mocking only at boundaries, unit/integration/e2e selection, determinism and flakiness elimination, honest assertions. Stack specifics load on demand:
   - `references/typescript.md` — Vitest/Jest, fake timers, MSW at the network boundary, React Testing Library, supertest + real-DB integration patterns, snapshot discipline.
+- `debugging/` — Systematic root-cause debugging: reproduce first (as a failing test), read the actual evidence instead of pattern-matching, one hypothesis per experiment, bisection, no shotgun fixes, and a stuck-loop protocol that hands off to fresh-context advising after two failed attempts.
+- `code-review/` — Reviewing changes: verify findings before asserting (construct the failure scenario), severity taxonomy, what's worth a comment vs what to let go, reinvention detection with citations, ticket-coverage checks, reviewing tests and migrations too.
+  - `references/security.md` — attack-scenario checklist: injection, authn/authz and IDOR, secrets and log leaks, SSRF, unbounded work, XSS/CSRF, TOCTOU, crypto and dependency risk.
+- `llm-engineering/` — Building on LLMs: escalate architecture only when needed (call → chain → agent → multi-agent), tool design where the description is the interface, schema-enforced structured outputs, context budgeting and cache-friendly prompt layout, reliability and cost telemetry, evals before prompt-tweaks, prompt-injection defense via capability limitation.
+- `git-hygiene/` — Atomic commits (never mix refactor with behavior change), messages whose body explains why, branch discipline, PR descriptions reviewers can act on, and history-safety rules around rebase and force-push.
+- `sql-and-migrations/` — Database discipline ordered by blast radius: expand/migrate/contract migrations, DDL lock awareness, constraints in the database, honest column types, N+1 and indexing, keyset pagination, tight transactions, destructive-statement safety rails.
+- `refactoring/` — Behavior-preserving restructuring: characterization tests before touching untested code, small always-green reversible steps, strict refactor/behavior separation, scope control, and strangler pattern for restructurings too big to slice.
 
 ## Design
 
