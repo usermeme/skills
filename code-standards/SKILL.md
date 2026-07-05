@@ -1,6 +1,6 @@
 ---
 name: code-standards
-description: Foundational engineering standards for this workspace — SOLID, clean code, naming, module organization, error handling, plus TypeScript, React, and slot-based UI composition guidance. Use whenever writing, reviewing, or refactoring code in any language, even for small edits — it defines the naming, file structure, typing, and component patterns every change must follow. For TypeScript, React, or Vue work, also read the matching file in references/.
+description: Foundational engineering standards — SOLID, clean code, naming, module organization, error handling, plus TypeScript, React, and slot-based UI composition guidance. Use whenever writing, reviewing, or refactoring code in any language, even for small edits — it defines the naming, file structure, typing, and component patterns every change must follow. For TypeScript, React, or Vue work, also read the matching file in references/.
 ---
 
 # Code Standards

@@ -59,7 +59,16 @@ Prompt changes without measurement is superstition — a tweak fixes the case in
 - Run the set on every prompt/model/tool-schema change; compare pass rates, not anecdotes. For subjective quality, LLM-as-judge with a written rubric — validated once against your own judgment before you trust it.
 - Log real traffic (inputs/outputs) so you can mine failures into evals; nondeterminism means run flaky-looking cases 3× before concluding anything.
 
-## 8. Injection and trust boundaries
+## 8. Agent instructions are code — skills, system prompts, CLAUDE.md
+
+The same discipline as §2 applies when the "tool" is a document the model reads:
+
+- **The description is the trigger.** A skill/instruction fires based on its description alone — write it in third person with concrete "use when…" conditions and the phrases a user would actually say, not a summary of the contents. If two skills could both match a request, their descriptions must draw the boundary.
+- **Progressive disclosure.** Keep the always-loaded surface small (short descriptions, lean SKILL.md); push per-language, per-framework, per-scenario depth into `references/` files loaded only when relevant. Every token in the default context dilutes attention on the task.
+- **State the why, not just the rule.** An agent that knows the failure mode a rule prevents can apply judgment in cases the rule didn't anticipate; a bare rule gets pattern-matched and misapplied.
+- Instructions regress like code: when you edit a prompt or skill, re-run the scenarios it exists for (§7). A wording tweak that fixes one behavior silently breaks another.
+
+## 9. Injection and trust boundaries
 
 Everything the model reads is potentially instructions — user input, retrieved docs, tool results, a PR diff, a webpage. Treat *content* as data, not commands:
 
