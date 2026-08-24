@@ -7,13 +7,13 @@ cd "$REPO_DIR"
 
 # 1. Verify this is a git repository
 if [ ! -d ".git" ]; then
-    if [ -f ".git" ] && [ -d ".bare" ]; then
-        echo "ℹ️ This repository is already configured with bare worktrees."
-        exit 0
-    else
-        echo "❌ Error: Not a git repository (no .git directory found in $REPO_DIR)."
-        exit 1
-    fi
+    echo "❌ Error: Not a git repository (no .git directory found in $REPO_DIR)."
+    exit 1
+fi
+
+if [ "$(git config --bool core.bare 2>/dev/null)" = "true" ]; then
+    echo "ℹ️ This repository is already configured with bare worktrees."
+    exit 0
 fi
 
 # 2. Check for uncommitted changes
@@ -39,25 +39,23 @@ find . -type f \( -name ".env" -o -name ".env.*" \) -not -path "*/.git/*" -not -
     cp "$f" "$TMP_UNTRACKED/$clean"
 done
 
-# 5. Convert .git to .bare
-mv .git .bare
-git --git-dir=.bare config --bool core.bare true
-echo "gitdir: ./.bare" > .git
+# 5. Configure core.bare on .git
+git config --bool core.bare true
 
 # 6. Configure remote fetch refspec if origin exists
-if git --git-dir=.bare remote get-url origin >/dev/null 2>&1; then
-    git --git-dir=.bare config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+if git remote get-url origin >/dev/null 2>&1; then
+    git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
 fi
 
-# 7. Clean existing root directory files (except .bare and .git)
-find . -mindepth 1 -maxdepth 1 ! -name ".bare" ! -name ".git" -exec rm -rf {} +
+# 7. Clean existing root directory files (except .git)
+find . -mindepth 1 -maxdepth 1 ! -name ".git" -exec rm -rf {} +
 
 # 8. Add primary worktree for current branch
 git worktree add "$CURRENT_DIR" "$CURRENT_BRANCH"
 
 # Make primary worktree pointers relative for host/container portability
-echo "gitdir: ../.bare/worktrees/$CURRENT_DIR" > "$CURRENT_DIR/.git"
-echo "../../../$CURRENT_DIR/.git" > ".bare/worktrees/$CURRENT_DIR/gitdir"
+echo "gitdir: ../.git/worktrees/$CURRENT_DIR" > "$CURRENT_DIR/.git"
+echo "../../../$CURRENT_DIR/.git" > ".git/worktrees/$CURRENT_DIR/gitdir"
 
 # Configure devcontainer mounts if .devcontainer exists in primary worktree
 if [ -d "$CURRENT_DIR/.devcontainer" ]; then
@@ -65,7 +63,6 @@ if [ -d "$CURRENT_DIR/.devcontainer" ]; then
     cat << 'EOF' > "$CURRENT_DIR/.devcontainer/devcontainer.override.json"
 {
   "mounts": [
-    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
     "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
   ]
 }
@@ -129,8 +126,8 @@ else
 fi
 
 # Make worktree pointers relative for host/container portability
-echo "gitdir: ../.bare/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
-echo "../../../$DIR_NAME/.git" > ".bare/worktrees/$DIR_NAME/gitdir"
+echo "gitdir: ../.git/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
+echo "../../../$DIR_NAME/.git" > ".git/worktrees/$DIR_NAME/gitdir"
 
 if [ -d "$BASE_DIR_NAME" ]; then
     echo "🔍 Scanning '$BASE_DIR_NAME' for .env files..."
@@ -152,7 +149,6 @@ if [ -d "$DIR_NAME/.devcontainer" ]; then
     cat << 'EOF' > "$DIR_NAME/.devcontainer/devcontainer.override.json"
 {
   "mounts": [
-    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
     "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
   ]
 }
@@ -167,8 +163,7 @@ fi
 
 echo "✨ Successfully converted to bare worktree layout!"
 echo "📁 Layout:"
-echo "   ├── .bare/"
-echo "   ├── .git"
+echo "   ├── .git/"
 echo "   ├── wt-add.sh"
 echo "   └── $CURRENT_DIR/"
 echo ""

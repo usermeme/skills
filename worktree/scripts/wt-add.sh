@@ -41,8 +41,8 @@ else
 fi
 
 # Make worktree pointers relative for host/container portability
-echo "gitdir: ../.bare/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
-echo "../../../$DIR_NAME/.git" > ".bare/worktrees/$DIR_NAME/gitdir"
+echo "gitdir: ../.git/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
+echo "../../../$DIR_NAME/.git" > ".git/worktrees/$DIR_NAME/gitdir"
 
 # 5. Recursively copy .env files from base worktree into new worktree
 if [ -d "$BASE_DIR_NAME" ]; then
@@ -76,7 +76,6 @@ if [ -d "$DIR_NAME/.devcontainer" ]; then
     cat << 'EOF' > "$DIR_NAME/.devcontainer/devcontainer.override.json"
 {
   "mounts": [
-    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
     "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
   ]
 }

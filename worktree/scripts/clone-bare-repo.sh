@@ -21,27 +21,24 @@ mkdir -p "$TARGET_DIR"
 cd "$TARGET_DIR"
 
 # 1. Clone bare repository
-git clone --bare "$REPO_URL" .bare
+git clone --bare "$REPO_URL" .git
 
-# 2. Configure .git pointer
-echo "gitdir: ./.bare" > .git
-
-# 3. Configure fetch refspec for all remote branches
+# 2. Configure fetch refspec for all remote branches
 git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
 git fetch origin
 
-# 4. Detect default branch (main or master)
+# 3. Detect default branch (main or master)
 DEFAULT_BRANCH="main"
 if git show-ref --verify --quiet refs/remotes/origin/master && ! git show-ref --verify --quiet refs/remotes/origin/main; then
     DEFAULT_BRANCH="master"
 fi
 
-# 5. Create primary worktree
+# 4. Create primary worktree
 git worktree add "$DEFAULT_BRANCH"
 
 # Make primary worktree pointers relative for host/container portability
-echo "gitdir: ../.bare/worktrees/$DEFAULT_BRANCH" > "$DEFAULT_BRANCH/.git"
-echo "../../../$DEFAULT_BRANCH/.git" > ".bare/worktrees/$DEFAULT_BRANCH/gitdir"
+echo "gitdir: ../.git/worktrees/$DEFAULT_BRANCH" > "$DEFAULT_BRANCH/.git"
+echo "../../../$DEFAULT_BRANCH/.git" > ".git/worktrees/$DEFAULT_BRANCH/gitdir"
 
 # Configure devcontainer mounts if .devcontainer exists in primary worktree
 if [ -d "$DEFAULT_BRANCH/.devcontainer" ]; then
@@ -49,7 +46,6 @@ if [ -d "$DEFAULT_BRANCH/.devcontainer" ]; then
     cat << 'EOF' > "$DEFAULT_BRANCH/.devcontainer/devcontainer.override.json"
 {
   "mounts": [
-    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
     "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
   ]
 }
@@ -57,7 +53,7 @@ EOF
     echo "  ✅ Created: $DEFAULT_BRANCH/.devcontainer/devcontainer.override.json"
 fi
 
-# 6. Install wt-add.sh helper script
+# 5. Install wt-add.sh helper script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/wt-add.sh" ]; then
     cp "$SCRIPT_DIR/wt-add.sh" ./wt-add.sh
@@ -102,8 +98,8 @@ else
 fi
 
 # Make worktree pointers relative for host/container portability
-echo "gitdir: ../.bare/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
-echo "../../../$DIR_NAME/.git" > ".bare/worktrees/$DIR_NAME/gitdir"
+echo "gitdir: ../.git/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
+echo "../../../$DIR_NAME/.git" > ".git/worktrees/$DIR_NAME/gitdir"
 
 if [ -d "$BASE_DIR_NAME" ]; then
     echo "🔍 Scanning '$BASE_DIR_NAME' for .env files..."
@@ -125,7 +121,6 @@ if [ -d "$DIR_NAME/.devcontainer" ]; then
     cat << 'EOF' > "$DIR_NAME/.devcontainer/devcontainer.override.json"
 {
   "mounts": [
-    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
     "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
   ]
 }
@@ -140,8 +135,7 @@ fi
 
 echo "✨ Repository ready at '$TARGET_DIR'!"
 echo "📁 Layout:"
-echo "   ├── .bare/"
-echo "   ├── .git"
+echo "   ├── .git/"
 echo "   ├── wt-add.sh"
 echo "   └── $DEFAULT_BRANCH/"
 echo ""
