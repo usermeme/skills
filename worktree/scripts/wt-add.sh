@@ -66,8 +66,23 @@ if [ -d "$BASE_DIR_NAME" ]; then
     if [ "$found_any" = false ]; then
         echo "ℹ️ No .env files found in '$BASE_DIR_NAME'."
     fi
-    
-    echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
 else
     echo "⚠️ Base folder '$BASE_DIR_NAME' not found. Skipped .env file copy."
 fi
+
+# 6. Configure devcontainer mounts if .devcontainer exists
+if [ -d "$DIR_NAME/.devcontainer" ]; then
+    echo "🐳 Found .devcontainer in './$DIR_NAME', configuring devcontainer.override.json for git mounts..."
+    cat << 'EOF' > "$DIR_NAME/.devcontainer/devcontainer.override.json"
+{
+  "mounts": [
+    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
+    "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
+  ]
+}
+EOF
+    echo "  ✅ Created: $DIR_NAME/.devcontainer/devcontainer.override.json"
+fi
+
+echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
+

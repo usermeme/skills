@@ -43,13 +43,27 @@ git worktree add "$DEFAULT_BRANCH"
 echo "gitdir: ../.bare/worktrees/$DEFAULT_BRANCH" > "$DEFAULT_BRANCH/.git"
 echo "../../../$DEFAULT_BRANCH/.git" > ".bare/worktrees/$DEFAULT_BRANCH/gitdir"
 
+# Configure devcontainer mounts if .devcontainer exists in primary worktree
+if [ -d "$DEFAULT_BRANCH/.devcontainer" ]; then
+    echo "🐳 Found .devcontainer in './$DEFAULT_BRANCH', configuring devcontainer.override.json for git mounts..."
+    cat << 'EOF' > "$DEFAULT_BRANCH/.devcontainer/devcontainer.override.json"
+{
+  "mounts": [
+    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
+    "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
+  ]
+}
+EOF
+    echo "  ✅ Created: $DEFAULT_BRANCH/.devcontainer/devcontainer.override.json"
+fi
+
 # 6. Install wt-add.sh helper script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/wt-add.sh" ]; then
     cp "$SCRIPT_DIR/wt-add.sh" ./wt-add.sh
     chmod +x ./wt-add.sh
 else
-    cat << 'EOF' > ./wt-add.sh
+    cat << 'WT_ADD_EOF' > ./wt-add.sh
 #!/bin/bash
 set -e
 
@@ -103,10 +117,24 @@ if [ -d "$BASE_DIR_NAME" ]; then
         cp "$envfile" "$dest_file"
         echo "  ✅ Copied: $rel_path"
     done < <(find "$BASE_DIR" -type f \( -name ".env" -o -name ".env.*" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -print0)
-    
-    echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
 fi
+
+# Configure devcontainer mounts if .devcontainer exists
+if [ -d "$DIR_NAME/.devcontainer" ]; then
+    echo "🐳 Found .devcontainer in './$DIR_NAME', configuring devcontainer.override.json for git mounts..."
+    cat << 'EOF' > "$DIR_NAME/.devcontainer/devcontainer.override.json"
+{
+  "mounts": [
+    "source=${localWorkspaceFolder}/../.bare,target=${containerWorkspaceFolder}/../.bare,type=bind",
+    "source=${localWorkspaceFolder}/../.git,target=${containerWorkspaceFolder}/../.git,type=bind"
+  ]
+}
 EOF
+    echo "  ✅ Created: $DIR_NAME/.devcontainer/devcontainer.override.json"
+fi
+
+echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
+WT_ADD_EOF
     chmod +x ./wt-add.sh
 fi
 
