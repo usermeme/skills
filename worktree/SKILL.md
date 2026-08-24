@@ -1,6 +1,6 @@
 ---
 name: worktree
-description: Fully automated management of git repositories using bare worktrees — automatic conversion/parsing of standard git repos into bare worktree layout (.bare, .git pointer, main/master worktree), creating sibling worktrees via .wt-add.sh with automatic recursive .env copying (ignoring node_modules), cloning new repos into bare worktrees, switching contexts, and automated cleanup. Use whenever the user asks to work with worktrees, convert a repository to worktrees, add or create a worktree for a branch/feature, or clean up worktrees.
+description: Fully automated management of git repositories using bare worktrees — automatic conversion/parsing of standard git repos into bare worktree layout (.bare, .git pointer, main/master worktree), creating sibling worktrees via wt-add.sh with automatic recursive .env copying (ignoring node_modules), cloning new repos into bare worktrees, switching contexts, and automated cleanup. Use whenever the user asks to work with worktrees, convert a repository to worktrees, add or create a worktree for a branch/feature, or clean up worktrees.
 ---
 
 # Automated Bare Git Worktrees
@@ -11,7 +11,7 @@ Manage and operate git repositories using bare worktrees with zero manual steps.
 my-project/
 ├── .bare/                # Bare git repository
 ├── .git                  # Pointer file: "gitdir: ./.bare"
-├── .wt-add.sh            # Automated worktree creation & .env copy script
+├── wt-add.sh             # Automated worktree creation & .env copy script
 ├── main/                 # Primary worktree (tracking origin/main or origin/master)
 ├── feat-auth/            # Sibling worktree (feature branch)
 └── fix-login-bug/        # Sibling worktree (bugfix branch)
@@ -41,18 +41,18 @@ Run [convert-repo-to-worktree.sh](./scripts/convert-repo-to-worktree.sh):
 5. Cleans root files and creates the primary worktree (`main` or `master`).
 6. Sets relative worktree pointers (`gitdir: ../.bare/worktrees/...`) for host/container/devcontainer portability.
 7. Restores all `.env*` files into the primary worktree with full directory hierarchy.
-8. Installs and permissions [`.wt-add.sh`](./scripts/.wt-add.sh) into the wrapper root.
+8. Installs and permissions [`wt-add.sh`](./scripts/wt-add.sh) into the wrapper root.
 
 ---
 
-### Add a New Worktree (`.wt-add.sh`)
+### Add a New Worktree (`wt-add.sh`)
 
 When the user asks to create a new branch or worktree:
 
-Run [`.wt-add.sh`](./scripts/.wt-add.sh) from the wrapper root:
+Run [`wt-add.sh`](./scripts/wt-add.sh) from the wrapper root:
 
 ```bash
-./.wt-add.sh <branch-name> [base-branch]
+./wt-add.sh <branch-name> [base-branch]
 ```
 
 **Automated actions performed by the script:**
@@ -79,7 +79,7 @@ Run [clone-bare-repo.sh](./scripts/clone-bare-repo.sh):
 1. Clones `--bare` into `<target-directory>/.bare`.
 2. Creates the root `.git` pointer file and configures remote refspecs.
 3. Initializes the primary worktree (`main` or `master`) with relative path pointers.
-4. Installs [`.wt-add.sh`](./scripts/.wt-add.sh) into the wrapper root.
+4. Installs [`wt-add.sh`](./scripts/wt-add.sh) into the wrapper root.
 
 ---
 
@@ -105,7 +105,7 @@ git branch -d <branch-name>
 - **Portable relative pointers**: All worktrees use relative `gitdir` pointers (`../.bare/worktrees/...` and `../../../<branch>/.git`) instead of Git's default absolute paths, ensuring seamless switching between Docker/Devcontainers, host OS, and directory moves.
 - **No manual file wrangling**: Always use the automated scripts to guarantee `.env` file preservation and proper gitdir metadata links.
 - **One worktree per branch**: Git prevents checking out the same branch in multiple worktrees at once.
-- **Never commit `.env` files**: Untracked `.env` files copied by `.wt-add.sh` remain untracked in git ([git-hygiene](../git-hygiene/SKILL.md)).
+- **Never commit `.env` files**: Untracked `.env` files copied by `wt-add.sh` remain untracked in git ([git-hygiene](../git-hygiene/SKILL.md)).
 - **Keep base worktree updated**: Pull `main/` before branching:
   ```bash
   cd main && git pull && cd ..

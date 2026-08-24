@@ -43,13 +43,13 @@ git worktree add "$DEFAULT_BRANCH"
 echo "gitdir: ../.bare/worktrees/$DEFAULT_BRANCH" > "$DEFAULT_BRANCH/.git"
 echo "../../../$DEFAULT_BRANCH/.git" > ".bare/worktrees/$DEFAULT_BRANCH/gitdir"
 
-# 6. Install .wt-add.sh helper script
+# 6. Install wt-add.sh helper script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/.wt-add.sh" ]; then
-    cp "$SCRIPT_DIR/.wt-add.sh" ./.wt-add.sh
-    chmod +x ./.wt-add.sh
+if [ -f "$SCRIPT_DIR/wt-add.sh" ]; then
+    cp "$SCRIPT_DIR/wt-add.sh" ./wt-add.sh
+    chmod +x ./wt-add.sh
 else
-    cat << 'EOF' > ./.wt-add.sh
+    cat << 'EOF' > ./wt-add.sh
 #!/bin/bash
 set -e
 
@@ -58,7 +58,7 @@ BASE_BRANCH=${2:-}
 
 if [ -z "$BRANCH_NAME" ]; then
     echo "❌ Error: Please provide a branch name."
-    echo "Usage: ./.wt-add.sh <branch-name> [base-branch]"
+    echo "Usage: ./wt-add.sh <branch-name> [base-branch]"
     exit 1
 fi
 
@@ -107,14 +107,14 @@ if [ -d "$BASE_DIR_NAME" ]; then
     echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
 fi
 EOF
-    chmod +x ./.wt-add.sh
+    chmod +x ./wt-add.sh
 fi
 
 echo "✨ Repository ready at '$TARGET_DIR'!"
 echo "📁 Layout:"
 echo "   ├── .bare/"
 echo "   ├── .git"
-echo "   ├── .wt-add.sh"
+echo "   ├── wt-add.sh"
 echo "   └── $DEFAULT_BRANCH/"
 echo ""
-echo "👉 To add a new worktree: cd $TARGET_DIR && ./.wt-add.sh <branch-name>"
+echo "👉 To add a new worktree: cd $TARGET_DIR && ./wt-add.sh <branch-name>"

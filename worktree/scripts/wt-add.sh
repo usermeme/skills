@@ -7,7 +7,7 @@ BASE_BRANCH=${2:-}
 # 1. Validate branch name argument
 if [ -z "$BRANCH_NAME" ]; then
     echo "❌ Error: Please provide a branch name."
-    echo "Usage: ./.wt-add.sh <branch-name> [base-branch]"
+    echo "Usage: ./wt-add.sh <branch-name> [base-branch]"
     exit 1
 fi
 

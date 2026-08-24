@@ -69,14 +69,14 @@ if [ -d "$TMP_UNTRACKED" ]; then
     rm -rf "$TMP_UNTRACKED"
 fi
 
-# 10. Install .wt-add.sh script into the wrapper directory
-SCRIPT_SOURCE="$(dirname "$0")/.wt-add.sh"
+# 10. Install wt-add.sh script into the wrapper directory
+SCRIPT_SOURCE="$(dirname "$0")/wt-add.sh"
 if [ -f "$SCRIPT_SOURCE" ]; then
-    cp "$SCRIPT_SOURCE" ./.wt-add.sh
-    chmod +x ./.wt-add.sh
+    cp "$SCRIPT_SOURCE" ./wt-add.sh
+    chmod +x ./wt-add.sh
 else
-    # Fallback: embedded .wt-add.sh creation
-    cat << 'EOF' > ./.wt-add.sh
+    # Fallback: embedded wt-add.sh creation
+    cat << 'EOF' > ./wt-add.sh
 #!/bin/bash
 set -e
 
@@ -85,7 +85,7 @@ BASE_BRANCH=${2:-}
 
 if [ -z "$BRANCH_NAME" ]; then
     echo "❌ Error: Please provide a branch name."
-    echo "Usage: ./.wt-add.sh <branch-name> [base-branch]"
+    echo "Usage: ./wt-add.sh <branch-name> [base-branch]"
     exit 1
 fi
 
@@ -134,14 +134,14 @@ if [ -d "$BASE_DIR_NAME" ]; then
     echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
 fi
 EOF
-    chmod +x ./.wt-add.sh
+    chmod +x ./wt-add.sh
 fi
 
 echo "✨ Successfully converted to bare worktree layout!"
 echo "📁 Layout:"
 echo "   ├── .bare/"
 echo "   ├── .git"
-echo "   ├── .wt-add.sh"
+echo "   ├── wt-add.sh"
 echo "   └── $CURRENT_DIR/"
 echo ""
-echo "👉 To add a new worktree: ./.wt-add.sh <branch-name>"
+echo "👉 To add a new worktree: ./wt-add.sh <branch-name>"
