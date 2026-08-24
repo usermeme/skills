@@ -27,8 +27,9 @@ CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
 if [ -z "$CURRENT_BRANCH" ]; then
     CURRENT_BRANCH="main"
 fi
+CURRENT_DIR="${CURRENT_BRANCH//\//-}"
 
-echo "🔄 Converting repository to bare worktree layout on branch '$CURRENT_BRANCH'..."
+echo "🔄 Converting repository to bare worktree layout on branch '$CURRENT_BRANCH' (folder './$CURRENT_DIR')..."
 
 # 4. Backup untracked .env files temporarily
 TMP_UNTRACKED=$(mktemp -d)
@@ -52,14 +53,18 @@ fi
 find . -mindepth 1 -maxdepth 1 ! -name ".bare" ! -name ".git" -exec rm -rf {} +
 
 # 8. Add primary worktree for current branch
-git worktree add "$CURRENT_BRANCH"
+git worktree add "$CURRENT_DIR" "$CURRENT_BRANCH"
+
+# Make primary worktree pointers relative for host/container portability
+echo "gitdir: ../.bare/worktrees/$CURRENT_DIR" > "$CURRENT_DIR/.git"
+echo "../../../$CURRENT_DIR/.git" > ".bare/worktrees/$CURRENT_DIR/gitdir"
 
 # 9. Restore backed up .env files into the primary worktree
 if [ -d "$TMP_UNTRACKED" ]; then
     find "$TMP_UNTRACKED" -type f | while read -r f; do
         rel="${f#$TMP_UNTRACKED/}"
-        mkdir -p "$CURRENT_BRANCH/$(dirname "$rel")"
-        cp "$f" "$CURRENT_BRANCH/$rel"
+        mkdir -p "$CURRENT_DIR/$(dirname "$rel")"
+        cp "$f" "$CURRENT_DIR/$rel"
     done
     rm -rf "$TMP_UNTRACKED"
 fi
@@ -84,6 +89,8 @@ if [ -z "$BRANCH_NAME" ]; then
     exit 1
 fi
 
+DIR_NAME="${BRANCH_NAME//\//-}"
+
 if [ -z "$BASE_BRANCH" ]; then
     if [ -d "main" ]; then
         BASE_BRANCH="main"
@@ -94,18 +101,27 @@ if [ -z "$BASE_BRANCH" ]; then
     fi
 fi
 
-echo "🌿 Creating worktree for '$BRANCH_NAME' (based on '$BASE_BRANCH')..."
-
-if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME" || git show-ref --verify --quiet "refs/remotes/origin/$BRANCH_NAME"; then
-    git worktree add "$BRANCH_NAME"
-else
-    git worktree add -b "$BRANCH_NAME" "$BRANCH_NAME" "$BASE_BRANCH"
+BASE_DIR_NAME="$BASE_BRANCH"
+if [ ! -d "$BASE_DIR_NAME" ] && [ -d "${BASE_BRANCH//\//-}" ]; then
+    BASE_DIR_NAME="${BASE_BRANCH//\//-}"
 fi
 
-if [ -d "$BASE_BRANCH" ]; then
-    echo "🔍 Scanning '$BASE_BRANCH' for .env files..."
-    BASE_DIR="$(pwd)/$BASE_BRANCH"
-    TARGET_DIR="$(pwd)/$BRANCH_NAME"
+echo "🌿 Creating worktree for branch '$BRANCH_NAME' in folder './$DIR_NAME' (based on '$BASE_BRANCH')..."
+
+if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME" || git show-ref --verify --quiet "refs/remotes/origin/$BRANCH_NAME"; then
+    git worktree add "$DIR_NAME" "$BRANCH_NAME"
+else
+    git worktree add -b "$BRANCH_NAME" "$DIR_NAME" "$BASE_BRANCH"
+fi
+
+# Make worktree pointers relative for host/container portability
+echo "gitdir: ../.bare/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
+echo "../../../$DIR_NAME/.git" > ".bare/worktrees/$DIR_NAME/gitdir"
+
+if [ -d "$BASE_DIR_NAME" ]; then
+    echo "🔍 Scanning '$BASE_DIR_NAME' for .env files..."
+    BASE_DIR="$(pwd)/$BASE_DIR_NAME"
+    TARGET_DIR="$(pwd)/$DIR_NAME"
     
     while IFS= read -r -d '' envfile; do
         rel_path="${envfile#$BASE_DIR/}"
@@ -115,7 +131,7 @@ if [ -d "$BASE_BRANCH" ]; then
         echo "  ✅ Copied: $rel_path"
     done < <(find "$BASE_DIR" -type f \( -name ".env" -o -name ".env.*" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -print0)
     
-    echo "🎉 Worktree '$BRANCH_NAME' is ready at './$BRANCH_NAME'!"
+    echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
 fi
 EOF
     chmod +x ./.wt-add.sh
@@ -126,6 +142,6 @@ echo "📁 Layout:"
 echo "   ├── .bare/"
 echo "   ├── .git"
 echo "   ├── .wt-add.sh"
-echo "   └── $CURRENT_BRANCH/"
+echo "   └── $CURRENT_DIR/"
 echo ""
 echo "👉 To add a new worktree: ./.wt-add.sh <branch-name>"

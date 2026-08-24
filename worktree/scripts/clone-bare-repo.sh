@@ -39,6 +39,10 @@ fi
 # 5. Create primary worktree
 git worktree add "$DEFAULT_BRANCH"
 
+# Make primary worktree pointers relative for host/container portability
+echo "gitdir: ../.bare/worktrees/$DEFAULT_BRANCH" > "$DEFAULT_BRANCH/.git"
+echo "../../../$DEFAULT_BRANCH/.git" > ".bare/worktrees/$DEFAULT_BRANCH/gitdir"
+
 # 6. Install .wt-add.sh helper script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/.wt-add.sh" ]; then
@@ -58,6 +62,8 @@ if [ -z "$BRANCH_NAME" ]; then
     exit 1
 fi
 
+DIR_NAME="${BRANCH_NAME//\//-}"
+
 if [ -z "$BASE_BRANCH" ]; then
     if [ -d "main" ]; then
         BASE_BRANCH="main"
@@ -68,18 +74,27 @@ if [ -z "$BASE_BRANCH" ]; then
     fi
 fi
 
-echo "🌿 Creating worktree for '$BRANCH_NAME' (based on '$BASE_BRANCH')..."
-
-if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME" || git show-ref --verify --quiet "refs/remotes/origin/$BRANCH_NAME"; then
-    git worktree add "$BRANCH_NAME"
-else
-    git worktree add -b "$BRANCH_NAME" "$BRANCH_NAME" "$BASE_BRANCH"
+BASE_DIR_NAME="$BASE_BRANCH"
+if [ ! -d "$BASE_DIR_NAME" ] && [ -d "${BASE_BRANCH//\//-}" ]; then
+    BASE_DIR_NAME="${BASE_BRANCH//\//-}"
 fi
 
-if [ -d "$BASE_BRANCH" ]; then
-    echo "🔍 Scanning '$BASE_BRANCH' for .env files..."
-    BASE_DIR="$(pwd)/$BASE_BRANCH"
-    TARGET_DIR="$(pwd)/$BRANCH_NAME"
+echo "🌿 Creating worktree for branch '$BRANCH_NAME' in folder './$DIR_NAME' (based on '$BASE_BRANCH')..."
+
+if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME" || git show-ref --verify --quiet "refs/remotes/origin/$BRANCH_NAME"; then
+    git worktree add "$DIR_NAME" "$BRANCH_NAME"
+else
+    git worktree add -b "$BRANCH_NAME" "$DIR_NAME" "$BASE_BRANCH"
+fi
+
+# Make worktree pointers relative for host/container portability
+echo "gitdir: ../.bare/worktrees/$DIR_NAME" > "$DIR_NAME/.git"
+echo "../../../$DIR_NAME/.git" > ".bare/worktrees/$DIR_NAME/gitdir"
+
+if [ -d "$BASE_DIR_NAME" ]; then
+    echo "🔍 Scanning '$BASE_DIR_NAME' for .env files..."
+    BASE_DIR="$(pwd)/$BASE_DIR_NAME"
+    TARGET_DIR="$(pwd)/$DIR_NAME"
     
     while IFS= read -r -d '' envfile; do
         rel_path="${envfile#$BASE_DIR/}"
@@ -89,7 +104,7 @@ if [ -d "$BASE_BRANCH" ]; then
         echo "  ✅ Copied: $rel_path"
     done < <(find "$BASE_DIR" -type f \( -name ".env" -o -name ".env.*" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -print0)
     
-    echo "🎉 Worktree '$BRANCH_NAME' is ready at './$BRANCH_NAME'!"
+    echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
 fi
 EOF
     chmod +x ./.wt-add.sh

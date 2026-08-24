@@ -39,8 +39,9 @@ Run [convert-repo-to-worktree.sh](./scripts/convert-repo-to-worktree.sh):
 3. Creates the `.git` pointer file (`gitdir: ./.bare`) at the wrapper root.
 4. Configures `remote.origin.fetch` to track all remote branches.
 5. Cleans root files and creates the primary worktree (`main` or `master`).
-6. Restores all `.env*` files into the primary worktree with full directory hierarchy.
-7. Installs and permissions [`.wt-add.sh`](./scripts/.wt-add.sh) into the wrapper root.
+6. Sets relative worktree pointers (`gitdir: ../.bare/worktrees/...`) for host/container/devcontainer portability.
+7. Restores all `.env*` files into the primary worktree with full directory hierarchy.
+8. Installs and permissions [`.wt-add.sh`](./scripts/.wt-add.sh) into the wrapper root.
 
 ---
 
@@ -55,10 +56,12 @@ Run [`.wt-add.sh`](./scripts/.wt-add.sh) from the wrapper root:
 ```
 
 **Automated actions performed by the script:**
-1. Checks out the branch (or creates a new branch off `main`/`master`) into `./<branch-name>`.
-2. Recursively scans `main/` for all `.env*` files (e.g. `.env`, `.env.local`, nested app configs).
-3. Recreates the directory hierarchy in the new worktree and copies the `.env*` files.
-4. Skips `node_modules` and `.git`.
+1. Sanitizes the directory name by replacing slashes with hyphens (e.g. `feat/asdasd` creates folder `./feat-asdasd` while preserving git branch `feat/asdasd`).
+2. Checks out the branch (or creates a new branch off `main`/`master`) into `./<dir-name>`.
+3. Configures relative worktree pointers (`gitdir`) for cross-environment portability.
+4. Recursively scans the base worktree for all `.env*` files (e.g. `.env`, `.env.local`, nested app configs).
+5. Recreates the directory hierarchy in the new worktree and copies the `.env*` files.
+6. Skips `node_modules` and `.git`.
 
 ---
 
@@ -75,7 +78,7 @@ Run [clone-bare-repo.sh](./scripts/clone-bare-repo.sh):
 **Automated actions performed by the script:**
 1. Clones `--bare` into `<target-directory>/.bare`.
 2. Creates the root `.git` pointer file and configures remote refspecs.
-3. Initializes the primary worktree (`main` or `master`).
+3. Initializes the primary worktree (`main` or `master`) with relative path pointers.
 4. Installs [`.wt-add.sh`](./scripts/.wt-add.sh) into the wrapper root.
 
 ---
@@ -99,6 +102,7 @@ git branch -d <branch-name>
 
 ## 2. Invariants & Safety Rails
 
+- **Portable relative pointers**: All worktrees use relative `gitdir` pointers (`../.bare/worktrees/...` and `../../../<branch>/.git`) instead of Git's default absolute paths, ensuring seamless switching between Docker/Devcontainers, host OS, and directory moves.
 - **No manual file wrangling**: Always use the automated scripts to guarantee `.env` file preservation and proper gitdir metadata links.
 - **One worktree per branch**: Git prevents checking out the same branch in multiple worktrees at once.
 - **Never commit `.env` files**: Untracked `.env` files copied by `.wt-add.sh` remain untracked in git ([git-hygiene](../git-hygiene/SKILL.md)).
