@@ -40,11 +40,10 @@ git worktree add "$DEFAULT_BRANCH"
 echo "gitdir: ../.git/worktrees/$DEFAULT_BRANCH" > "$DEFAULT_BRANCH/.git"
 echo "../../../$DEFAULT_BRANCH/.git" > ".git/worktrees/$DEFAULT_BRANCH/gitdir"
 
-# Helper function to detect base image from devcontainer.json or fallback
-detect_devcontainer_image() {
+# Helper function to generate devcontainer.override.json preserving original settings and merging mounts
+generate_devcontainer_override() {
     local target_dir="$1"
     local base_dir="${2:-}"
-    local default_image="mcr.microsoft.com/devcontainers/javascript-node:24"
     local dc_file=""
 
     if [ -f "$target_dir/.devcontainer/devcontainer.json" ]; then
@@ -55,74 +54,149 @@ detect_devcontainer_image() {
         dc_file="$base_dir/.devcontainer/devcontainer.json"
     elif [ -n "$base_dir" ] && [ -f "$base_dir/.devcontainer.json" ]; then
         dc_file="$base_dir/.devcontainer.json"
+    elif [ -f "$target_dir/.devcontainer/devcontainer.override.json" ]; then
+        dc_file="$target_dir/.devcontainer/devcontainer.override.json"
+    elif [ -n "$base_dir" ] && [ -f "$base_dir/.devcontainer/devcontainer.override.json" ]; then
+        dc_file="$base_dir/.devcontainer/devcontainer.override.json"
     fi
 
-    if [ -n "$dc_file" ] && [ -f "$dc_file" ]; then
-        local detected_image=""
-        # Try jq if available (ignoring json comments if any)
-        if command -v jq >/dev/null 2>&1; then
-            detected_image=$(sed -e 's,//.*$,,g' -e 's,/\*.*\*/,,g' "$dc_file" | jq -r '.image // empty' 2>/dev/null || true)
-        fi
+    mkdir -p "$target_dir/.devcontainer"
+    local out_file="$target_dir/.devcontainer/devcontainer.override.json"
+    local generated=false
 
-        # Fallback to python3 if jq wasn't found or failed
-        if [ -z "$detected_image" ] && command -v python3 >/dev/null 2>&1; then
-            detected_image=$(python3 -c '
+    # 1. Try python3
+    if [ "$generated" = false ] && command -v python3 >/dev/null 2>&1; then
+        python3 -c '
 import json, re, sys
+
+dc_file = sys.argv[1] if len(sys.argv) > 1 else ""
+content = ""
+if dc_file:
+    try:
+        with open(dc_file, "r") as f:
+            content = f.read()
+    except Exception:
+        pass
+
+pattern = r"""("(?:\\.|[^"\\])*")|(//[^\n]*)|(/\*.*?\*/)"""
+cleaned = re.sub(pattern, lambda m: m.group(1) if m.group(1) else "", content, flags=re.VERBOSE | re.DOTALL)
+cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
+
 try:
-    with open(sys.argv[1], "r") as f:
-        content = f.read()
-    content = re.sub(r"//.*", "", content)
-    content = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
-    data = json.loads(content)
-    if "image" in data and isinstance(data["image"], str):
-        print(data["image"])
+    data = json.loads(cleaned) if cleaned.strip() else {}
 except Exception:
-    pass
-' "$dc_file" 2>/dev/null || true)
-        fi
+    data = {}
 
-        # Fallback to node if still empty
-        if [ -z "$detected_image" ] && command -v node >/dev/null 2>&1; then
-            detected_image=$(node -e '
-const fs = require("fs");
-try {
-  let content = fs.readFileSync(process.argv[1], "utf8");
-  content = content.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
-  const data = JSON.parse(content);
-  if (data.image && typeof data.image === "string") console.log(data.image);
-} catch(e) {}
-' "$dc_file" 2>/dev/null || true)
-        fi
+if not isinstance(data, dict):
+    data = {}
 
-        # Pure grep/sed fallback if no parser succeeded
-        if [ -z "$detected_image" ]; then
-            detected_image=$(grep -E '^[[:space:]]*"image"[[:space:]]*:' "$dc_file" | head -n 1 | sed -E 's/.*"image"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' || true)
-        fi
+data["workspaceFolder"] = "/workspaces/${localWorkspaceFolderBasename}"
+data["workspaceMount"] = "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached"
 
-        if [ -n "$detected_image" ] && [ "$detected_image" != "null" ]; then
-            echo "$detected_image"
-            return
-        fi
+git_mount = "source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
+raw_mounts = data.get("mounts", [])
+if not isinstance(raw_mounts, list):
+    raw_mounts = []
+
+has_git_mount = False
+for m in raw_mounts:
+    if isinstance(m, str) and ("target=/workspaces/.git" in m or "target=\"/workspaces/.git\"" in m):
+        has_git_mount = True
+        break
+    elif isinstance(m, dict) and m.get("target") == "/workspaces/.git":
+        has_git_mount = True
+        break
+
+if not has_git_mount:
+    raw_mounts.insert(0, git_mount)
+
+data["mounts"] = raw_mounts
+
+if "image" not in data and "build" not in data and "dockerComposeFile" not in data:
+    data["image"] = "mcr.microsoft.com/devcontainers/javascript-node:24"
+
+print(json.dumps(data, indent=2))
+' "$dc_file" > "$out_file" 2>/dev/null && generated=true || true
     fi
 
-    echo "$default_image"
+    # 2. Try node
+    if [ "$generated" = false ] && command -v node >/dev/null 2>&1; then
+        node -e '
+const fs = require("fs");
+const dcFile = process.argv[1] || "";
+let content = "";
+if (dcFile) {
+  try { content = fs.readFileSync(dcFile, "utf8"); } catch(e) {}
 }
 
-# Configure devcontainer mounts if .devcontainer exists in primary worktree
-if [ -d "$DEFAULT_BRANCH/.devcontainer" ]; then
-    echo "🐳 Found .devcontainer in './$DEFAULT_BRANCH', configuring devcontainer.override.json for git mounts..."
-    DC_IMAGE=$(detect_devcontainer_image "$DEFAULT_BRANCH")
-    cat << EOF > "$DEFAULT_BRANCH/.devcontainer/devcontainer.override.json"
+let data = {};
+try {
+  const cleaned = content
+    .replace(/("(?:\\.|[^"\\])*")|(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)/g, (m, s) => s || "")
+    .replace(/,\s*([}\]])/g, "$1");
+  if (cleaned.trim()) data = JSON.parse(cleaned);
+} catch(e) {}
+
+if (typeof data !== "object" || data === null || Array.isArray(data)) {
+  data = {};
+}
+
+data.workspaceFolder = "/workspaces/${localWorkspaceFolderBasename}";
+data.workspaceMount = "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached";
+
+const gitMount = "source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind";
+let mounts = Array.isArray(data.mounts) ? data.mounts : [];
+let hasGitMount = mounts.some(m =>
+  (typeof m === "string" && (m.includes("target=/workspaces/.git") || m.includes("target=\"/workspaces/.git\""))) ||
+  (typeof m === "object" && m !== null && m.target === "/workspaces/.git")
+);
+
+if (!hasGitMount) {
+  mounts.unshift(gitMount);
+}
+data.mounts = mounts;
+
+if (!data.image && !data.build && !data.dockerComposeFile) {
+  data.image = "mcr.microsoft.com/devcontainers/javascript-node:24";
+}
+
+fs.writeFileSync(process.argv[2], JSON.stringify(data, null, 2));
+' "$dc_file" "$out_file" 2>/dev/null && generated=true || true
+    fi
+
+    # 3. Try jq
+    if [ "$generated" = false ] && command -v jq >/dev/null 2>&1; then
+        if [ -n "$dc_file" ] && [ -f "$dc_file" ]; then
+            sed -e 's,//.*$,,g' -e 's,/\*.*\*/,,g' "$dc_file" | jq '
+                . + {
+                  workspaceFolder: "/workspaces/${localWorkspaceFolderBasename}",
+                  workspaceMount: "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+                  mounts: (["source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"] + (.mounts // [] | map(select(tostring | contains("target=/workspaces/.git") | not))))
+                }
+            ' > "$out_file" 2>/dev/null && generated=true || true
+        fi
+    fi
+
+    # 4. Fallback if still not generated
+    if [ "$generated" = false ]; then
+        cat << 'EOF_OVERRIDE' > "$out_file"
 {
-  "image": "$DC_IMAGE",
-  "workspaceFolder": "/workspaces/\${localWorkspaceFolderBasename}",
-  "workspaceMount": "source=\${localWorkspaceFolder},target=/workspaces/\${localWorkspaceFolderBasename},type=bind,consistency=cached",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
   "mounts": [
-    "source=\${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
+    "source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
   ]
 }
-EOF
-    echo "  ✅ Created: $DEFAULT_BRANCH/.devcontainer/devcontainer.override.json (image: $DC_IMAGE)"
+EOF_OVERRIDE
+    fi
+}
+
+# Configure devcontainer mounts if .devcontainer or devcontainer.json exists in primary worktree
+if [ -d "$DEFAULT_BRANCH/.devcontainer" ] || [ -f "$DEFAULT_BRANCH/.devcontainer.json" ]; then
+    echo "🐳 Found .devcontainer in './$DEFAULT_BRANCH', configuring devcontainer.override.json for git mounts..."
+    generate_devcontainer_override "$DEFAULT_BRANCH"
+    echo "  ✅ Created: $DEFAULT_BRANCH/.devcontainer/devcontainer.override.json"
 fi
 
 # 5. Install wt-add.sh helper script
@@ -187,11 +261,10 @@ if [ -d "$BASE_DIR_NAME" ]; then
     done < <(find "$BASE_DIR" -type f \( -name ".env" -o -name ".env.*" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -print0)
 fi
 
-# Helper function to detect base image from devcontainer.json or fallback
-detect_devcontainer_image() {
+# Helper function to generate devcontainer.override.json preserving original settings and merging mounts
+generate_devcontainer_override() {
     local target_dir="$1"
     local base_dir="${2:-}"
-    local default_image="mcr.microsoft.com/devcontainers/javascript-node:24"
     local dc_file=""
 
     if [ -f "$target_dir/.devcontainer/devcontainer.json" ]; then
@@ -202,74 +275,149 @@ detect_devcontainer_image() {
         dc_file="$base_dir/.devcontainer/devcontainer.json"
     elif [ -n "$base_dir" ] && [ -f "$base_dir/.devcontainer.json" ]; then
         dc_file="$base_dir/.devcontainer.json"
+    elif [ -f "$target_dir/.devcontainer/devcontainer.override.json" ]; then
+        dc_file="$target_dir/.devcontainer/devcontainer.override.json"
+    elif [ -n "$base_dir" ] && [ -f "$base_dir/.devcontainer/devcontainer.override.json" ]; then
+        dc_file="$base_dir/.devcontainer/devcontainer.override.json"
     fi
 
-    if [ -n "$dc_file" ] && [ -f "$dc_file" ]; then
-        local detected_image=""
-        # Try jq if available (ignoring json comments if any)
-        if command -v jq >/dev/null 2>&1; then
-            detected_image=$(sed -e 's,//.*$,,g' -e 's,/\*.*\*/,,g' "$dc_file" | jq -r '.image // empty' 2>/dev/null || true)
-        fi
+    mkdir -p "$target_dir/.devcontainer"
+    local out_file="$target_dir/.devcontainer/devcontainer.override.json"
+    local generated=false
 
-        # Fallback to python3 if jq wasn't found or failed
-        if [ -z "$detected_image" ] && command -v python3 >/dev/null 2>&1; then
-            detected_image=$(python3 -c '
+    # 1. Try python3
+    if [ "$generated" = false ] && command -v python3 >/dev/null 2>&1; then
+        python3 -c '
 import json, re, sys
+
+dc_file = sys.argv[1] if len(sys.argv) > 1 else ""
+content = ""
+if dc_file:
+    try:
+        with open(dc_file, "r") as f:
+            content = f.read()
+    except Exception:
+        pass
+
+pattern = r"""("(?:\\.|[^"\\])*")|(//[^\n]*)|(/\*.*?\*/)"""
+cleaned = re.sub(pattern, lambda m: m.group(1) if m.group(1) else "", content, flags=re.VERBOSE | re.DOTALL)
+cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
+
 try:
-    with open(sys.argv[1], "r") as f:
-        content = f.read()
-    content = re.sub(r"//.*", "", content)
-    content = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
-    data = json.loads(content)
-    if "image" in data and isinstance(data["image"], str):
-        print(data["image"])
+    data = json.loads(cleaned) if cleaned.strip() else {}
 except Exception:
-    pass
-' "$dc_file" 2>/dev/null || true)
-        fi
+    data = {}
 
-        # Fallback to node if still empty
-        if [ -z "$detected_image" ] && command -v node >/dev/null 2>&1; then
-            detected_image=$(node -e '
-const fs = require("fs");
-try {
-  let content = fs.readFileSync(process.argv[1], "utf8");
-  content = content.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
-  const data = JSON.parse(content);
-  if (data.image && typeof data.image === "string") console.log(data.image);
-} catch(e) {}
-' "$dc_file" 2>/dev/null || true)
-        fi
+if not isinstance(data, dict):
+    data = {}
 
-        # Pure grep/sed fallback if no parser succeeded
-        if [ -z "$detected_image" ]; then
-            detected_image=$(grep -E '^[[:space:]]*"image"[[:space:]]*:' "$dc_file" | head -n 1 | sed -E 's/.*"image"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' || true)
-        fi
+data["workspaceFolder"] = "/workspaces/${localWorkspaceFolderBasename}"
+data["workspaceMount"] = "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached"
 
-        if [ -n "$detected_image" ] && [ "$detected_image" != "null" ]; then
-            echo "$detected_image"
-            return
-        fi
+git_mount = "source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
+raw_mounts = data.get("mounts", [])
+if not isinstance(raw_mounts, list):
+    raw_mounts = []
+
+has_git_mount = False
+for m in raw_mounts:
+    if isinstance(m, str) and ("target=/workspaces/.git" in m or "target=\"/workspaces/.git\"" in m):
+        has_git_mount = True
+        break
+    elif isinstance(m, dict) and m.get("target") == "/workspaces/.git":
+        has_git_mount = True
+        break
+
+if not has_git_mount:
+    raw_mounts.insert(0, git_mount)
+
+data["mounts"] = raw_mounts
+
+if "image" not in data and "build" not in data and "dockerComposeFile" not in data:
+    data["image"] = "mcr.microsoft.com/devcontainers/javascript-node:24"
+
+print(json.dumps(data, indent=2))
+' "$dc_file" > "$out_file" 2>/dev/null && generated=true || true
     fi
 
-    echo "$default_image"
+    # 2. Try node
+    if [ "$generated" = false ] && command -v node >/dev/null 2>&1; then
+        node -e '
+const fs = require("fs");
+const dcFile = process.argv[1] || "";
+let content = "";
+if (dcFile) {
+  try { content = fs.readFileSync(dcFile, "utf8"); } catch(e) {}
 }
 
-# Configure devcontainer mounts if .devcontainer exists
-if [ -d "$DIR_NAME/.devcontainer" ]; then
-    echo "🐳 Found .devcontainer in './$DIR_NAME', configuring devcontainer.override.json for git mounts..."
-    DC_IMAGE=$(detect_devcontainer_image "$DIR_NAME" "$BASE_DIR_NAME")
-    cat << EOF > "$DIR_NAME/.devcontainer/devcontainer.override.json"
+let data = {};
+try {
+  const cleaned = content
+    .replace(/("(?:\\.|[^"\\])*")|(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)/g, (m, s) => s || "")
+    .replace(/,\s*([}\]])/g, "$1");
+  if (cleaned.trim()) data = JSON.parse(cleaned);
+} catch(e) {}
+
+if (typeof data !== "object" || data === null || Array.isArray(data)) {
+  data = {};
+}
+
+data.workspaceFolder = "/workspaces/${localWorkspaceFolderBasename}";
+data.workspaceMount = "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached";
+
+const gitMount = "source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind";
+let mounts = Array.isArray(data.mounts) ? data.mounts : [];
+let hasGitMount = mounts.some(m =>
+  (typeof m === "string" && (m.includes("target=/workspaces/.git") || m.includes("target=\"/workspaces/.git\""))) ||
+  (typeof m === "object" && m !== null && m.target === "/workspaces/.git")
+);
+
+if (!hasGitMount) {
+  mounts.unshift(gitMount);
+}
+data.mounts = mounts;
+
+if (!data.image && !data.build && !data.dockerComposeFile) {
+  data.image = "mcr.microsoft.com/devcontainers/javascript-node:24";
+}
+
+fs.writeFileSync(process.argv[2], JSON.stringify(data, null, 2));
+' "$dc_file" "$out_file" 2>/dev/null && generated=true || true
+    fi
+
+    # 3. Try jq
+    if [ "$generated" = false ] && command -v jq >/dev/null 2>&1; then
+        if [ -n "$dc_file" ] && [ -f "$dc_file" ]; then
+            sed -e 's,//.*$,,g' -e 's,/\*.*\*/,,g' "$dc_file" | jq '
+                . + {
+                  workspaceFolder: "/workspaces/${localWorkspaceFolderBasename}",
+                  workspaceMount: "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+                  mounts: (["source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"] + (.mounts // [] | map(select(tostring | contains("target=/workspaces/.git") | not))))
+                }
+            ' > "$out_file" 2>/dev/null && generated=true || true
+        fi
+    fi
+
+    # 4. Fallback if still not generated
+    if [ "$generated" = false ]; then
+        cat << 'EOF_OVERRIDE' > "$out_file"
 {
-  "image": "$DC_IMAGE",
-  "workspaceFolder": "/workspaces/\${localWorkspaceFolderBasename}",
-  "workspaceMount": "source=\${localWorkspaceFolder},target=/workspaces/\${localWorkspaceFolderBasename},type=bind,consistency=cached",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
   "mounts": [
-    "source=\${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
+    "source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
   ]
 }
-EOF
-    echo "  ✅ Created: $DIR_NAME/.devcontainer/devcontainer.override.json (image: $DC_IMAGE)"
+EOF_OVERRIDE
+    fi
+}
+
+# Configure devcontainer mounts if .devcontainer or devcontainer.json exists
+if [ -d "$DIR_NAME/.devcontainer" ] || [ -f "$DIR_NAME/.devcontainer.json" ]; then
+    echo "🐳 Found .devcontainer in './$DIR_NAME', configuring devcontainer.override.json for git mounts..."
+    generate_devcontainer_override "$DIR_NAME" "$BASE_DIR_NAME"
+    echo "  ✅ Created: $DIR_NAME/.devcontainer/devcontainer.override.json"
 fi
 
 echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"
