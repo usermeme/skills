@@ -145,8 +145,10 @@ if [ -d "$DIR_NAME/.devcontainer" ]; then
     cat << EOF > "$DIR_NAME/.devcontainer/devcontainer.override.json"
 {
   "image": "$DC_IMAGE",
+  "workspaceFolder": "/workspaces/\${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=\${localWorkspaceFolder},target=/workspaces/\${localWorkspaceFolderBasename},type=bind,consistency=cached",
   "mounts": [
-    "source=\${localWorkspaceFolder}/../.git,target=\${containerWorkspaceFolder}/../.git,type=bind"
+    "source=\${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
   ]
 }
 EOF
