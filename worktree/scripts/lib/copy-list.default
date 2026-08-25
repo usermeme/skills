@@ -1,0 +1,10 @@
+# Files that wt-add.sh copies from the base worktree into each new worktree.
+#
+# One entry per line, two kinds:
+#   <name-pattern>     matched recursively by file name (e.g. ".env*", "staging.json")
+#   ./<relative/path>  one exact file, relative to the worktree root
+#
+# Blank lines and lines starting with "#" are ignored.
+# node_modules/ and .git/ are always excluded.
+.env
+.env.*
