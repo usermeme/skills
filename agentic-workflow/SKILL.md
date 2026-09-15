@@ -109,7 +109,7 @@ Structure every completion report so the first sentence answers "what happened":
 ## 8. Safety rails
 
 - **Destructive or irreversible actions** (deleting data, force-push, dropping tables, overwriting files you didn't create, sending anything to an external service) — confirm first, every time, unless explicitly pre-authorized. Approval in one context does not carry to the next.
-- **Git**: never commit or push unless asked. Work on a branch, never directly on `main`. Before overwriting or deleting a file, look at it — if the contents contradict how it was described, surface that instead of proceeding.
+- **Git**: never commit or push unless asked. Work on a branch, never directly on `main`. Before overwriting or deleting a file, look at it — if the contents contradict how it was described, surface that instead of proceeding. **Never open a PR (draft included) while any question is still open** — ask first and wait; see [git-hygiene §4](../git-hygiene/SKILL.md).
 - **State-changing commands** (restarts, config edits, migrations): check the evidence supports *that specific* action first. A symptom that pattern-matches a known failure often has a different cause.
 - Secrets never go into code, logs, or commits. Env vars and secret managers only.
 

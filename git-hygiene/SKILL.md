@@ -31,6 +31,8 @@ One commit = one logical change that builds and passes tests on its own.
 
 ## 4. Pull requests
 
+**Hard gate — no PR while a question is open.** Before `gh pr create` or any equivalent (including draft PRs), check for anything still unresolved: a decision that is the user's to make, an assumption you made without confirmation, a requirement you interpreted rather than verified, a flagged risk you could not check, a `TODO`/`TBD` in the diff or in the description you are about to write. If even one exists, do **not** open the PR. Ask — batched, with concrete options and a recommended default, per [agentic-workflow §2](../agentic-workflow/SKILL.md) — and wait for the answer. An "Open questions" section in a PR description is not a workaround; a PR is a request to merge, and one with unresolved decisions asks the reviewer to make your choices for you. The PR is opened only once every question has a user-confirmed answer, or the user explicitly says to open it with the question still open.
+
 A PR description is the reviewer's map. Include:
 
 - **What & why** — one paragraph; link the ticket.
