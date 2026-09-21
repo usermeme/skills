@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: How to review code changes — verified findings over plausible guesses, severity-ranked comments, judgment about what's worth raising vs letting go, and spec/ticket coverage checks. Use whenever reviewing a pull request, a diff, a branch, or a teammate's/agent's proposed change; whenever asked to "look over", "check", or "give feedback on" code; and before approving or merging anything. For the security dimension of a review, also read references/security.md.
+description: How to review code changes — verified findings over plausible guesses, severity-ranked comments, judgment about what's worth raising vs letting go, calling the smartest model available for review analysis, and spec/ticket coverage checks. Use whenever reviewing a pull request, a diff, a branch, or a teammate's/agent's proposed change; whenever asked to "look over", "check", or "give feedback on" code; and before approving or merging anything. For the security dimension of a review, also read references/security.md.
 ---
 
 # Code Review
@@ -15,7 +15,7 @@ A plausible-but-wrong finding costs more than a missed one: the author burns tim
 
 - **Read beyond the diff.** Open the surrounding function, the callers, the type definitions. Most false positives come from reviewing hunks in isolation — the "missing null check" is three lines above the hunk.
 - **Construct the failure scenario.** A real finding names concrete inputs or state that produce the wrong outcome ("if two webhooks arrive within the TTL window, both pass the lock check because…"). If you cannot construct the scenario, you have a suspicion, not a finding — phrase it as a question instead.
-- For high-stakes claims (security, data loss, "this will corrupt X"), run an adversarial pass: genuinely try to refute your own finding, or have an independent agent try — see [advising](../advising/SKILL.md). Post only what survives.
+- For high-stakes claims (security, data loss, "this will corrupt X"), run an adversarial pass: genuinely try to refute your own finding, or have an independent agent try using the smartest model available — see [advising](../advising/SKILL.md). Post only what survives.
 
 ## 2. Severity — rank it, and don't cry wolf
 
@@ -59,3 +59,11 @@ A ten-comment review where three matter teaches authors to skim. Cap the nits; k
 - **Migrations/config/infra** files in the diff get the same scrutiny as code — a bad migration is the most expensive line in most PRs (see [sql-and-migrations](../sql-and-migrations/SKILL.md) if present).
 - **Blast radius**: who calls the changed function? Does the diff change behavior for callers not visible in it?
 - **Docs and contracts**: if the change alters an API/event shape, are the schema, docs, and consumers updated?
+
+## 6. Model selection — use the smartest model available
+
+Code review requires maximum critical discernment: catching race conditions, security vulnerabilities, contract drifts, and subtle multi-file interactions while avoiding noisy false alarms.
+
+- **Call the smartest model available**: When delegating review tasks, running review subagents, or evaluating diffs, always invoke the highest capability reasoning model available (e.g., `Model: "pro"` in Antigravity or the top-tier reasoning model in Claude Code / other platforms).
+- **The tool should decide the model**: If the reviewing tool, subagent caller, or orchestrator allows specifying the model, it should actively choose and route code review to the smartest available model rather than inheriting a lightweight execution model.
+- **Why this matters**: Weaker models hallucinate non-existent issues (generating false-positive review fatigue) and overlook real concurrency, edge-case, or data integrity flaws. High-intelligence models construct accurate, concrete failure scenarios and propose actionable fixes.

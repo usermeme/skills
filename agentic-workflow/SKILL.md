@@ -1,6 +1,6 @@
 ---
 name: agentic-workflow
-description: Operating discipline for autonomous coding agents, modeled on how Claude Code / Fable 5 works — verify before assuming, clarify with structured questions, challenge flawed plans, plan-then-approve, track tasks visibly, parallelize independent work, verify end-to-end before claiming done, communicate outcome-first, and stay safe around destructive actions. Use at the start of ANY non-trivial engineering task (new feature, refactor, bug hunt, multi-file change), whenever requirements are ambiguous or user-provided "facts" need verification, whenever a proposed approach looks flawed, and whenever you are about to report work as finished. If a task will take more than a couple of steps, this skill applies.
+description: Operating discipline for autonomous coding agents — verify before assuming, clarify with structured questions, challenge flawed plans, plan-then-approve, track tasks visibly, parallelize independent work, verify end-to-end before claiming done, communicate outcome-first, and stay safe around destructive actions. Use at the start of ANY non-trivial engineering task (new feature, refactor, bug hunt, multi-file change), whenever requirements are ambiguous or user-provided "facts" need verification, whenever a proposed approach looks flawed, and whenever you are about to report work as finished. If a task will take more than a couple of steps, this skill applies.
 ---
 
 # Agentic Workflow

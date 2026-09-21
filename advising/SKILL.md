@@ -1,6 +1,6 @@
 ---
 name: advising
-description: Consult an independent agent for a second opinion before committing to important decisions — reviewing an implementation plan, judging a risky design, adversarially verifying a bug diagnosis or code-review finding, or breaking out of a stuck debugging loop. Use whenever a decision is expensive to reverse, whenever you notice you are uncertain but about to proceed anyway, before large refactors, and before presenting conclusions the user will act on. If the environment supports subagents or multiple agent sessions (Claude Code Task tool, Antigravity Agent Manager), spawn one; otherwise simulate the adversarial pass explicitly.
+description: Consult an independent agent for a second opinion before committing to important decisions — reviewing an implementation plan, judging a risky design, adversarially verifying a bug diagnosis or code-review finding, or breaking out of a stuck debugging loop. Always call the smartest model available for advisory tasks. Use whenever a decision is expensive to reverse, whenever you notice you are uncertain but about to proceed anyway, before large refactors, and before presenting conclusions the user will act on. If the environment supports subagents or multiple agent sessions, spawn one using the highest capability model; otherwise simulate the adversarial pass explicitly.
 ---
 
 # Advising — Second Opinions from Independent Agents
@@ -18,6 +18,14 @@ Consult a second agent when the **cost of being wrong exceeds the cost of the co
 - **Anything security-, data-loss-, or money-adjacent.**
 
 Skip it for routine work, reversible details, and anything a test can answer faster. Advice is a tool for judgment calls, not a tax on every step.
+
+## Model selection — call the smartest model available
+
+Advisory work is fundamentally a high-cognitive-load reasoning task: it requires dissecting assumptions, identifying subtle edge cases, evaluating architectural trade-offs, and adversarial refutation.
+
+- **Always select the smartest model available** for the advisor. Never use lightweight, economy, or fast models (such as `flash`, `flash_lite`, or `haiku`) for advising. Smaller models are prone to sycophancy, agree with flawed premises, and miss subtle failure modes.
+- **The tool should decide the model**: When the environment or tool allows specifying the model (e.g. `Model: "pro"` in Antigravity's `invoke_subagent`, or top reasoning tier flags in CLI subagent tools), the calling agent/tool should explicitly decide and select the smartest model available rather than defaulting to a fast or inherited lightweight model.
+- If the primary agent is running on a faster model for execution speed, it must step up to the highest capability model whenever consulting an advisor.
 
 ## How to brief the advisor
 
@@ -49,6 +57,6 @@ The consultation's value is determined by the brief. Three rules:
 
 ## Mechanics by environment
 
-- **Claude Code / Fable**: spawn a subagent (Task tool) with the brief; use read-only agents for review work. Multiple advisors can run in parallel in one message.
-- **Antigravity**: launch a separate agent in the Agent Manager with the brief as its task; point it at the same workspace so it reads real code. Run advisors alongside your main work rather than blocking on them when possible.
+- **Claude Code**: spawn a subagent (Task tool) with the brief, configuring it to use the smartest available reasoning model; use read-only agents for review work. Multiple advisors can run in parallel in one message.
+- **Antigravity**: invoke a subagent (via `invoke_subagent` or launch in Agent Manager) with `Model: "pro"` to ensure the advisor operates with the smartest reasoning capabilities available. Point it at the same workspace so it reads real code. Run advisors alongside your main work rather than blocking on them when possible.
 - **No subagent support**: do an explicit adversarial pass yourself — write the refutation brief, then answer it in a genuinely separate pass *before* looking back at your original reasoning. Weaker than true independence, far better than nothing.

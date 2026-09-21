@@ -5,7 +5,7 @@ set -e
 #   1. checks out an existing local/remote branch, or creates one off the base
 #   2. sets relative gitdir pointers for host/container portability
 #   3. copies the files listed in .scripts/copy-list from the base worktree
-#   4. generates .devcontainer/devcontainer.override.json when a devcontainer exists
+#   4. generates .devcontainer/devcontainer.override.json with the worktree feature when a devcontainer exists
 #
 # Usage: ./wt-add.sh <branch-name> [base-branch]
 

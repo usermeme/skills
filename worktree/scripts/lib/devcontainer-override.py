@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Generate .devcontainer/devcontainer.override.json for a bare-worktree checkout.
 
-Preserves all original devcontainer.json settings and merges in the
-workspaceFolder/workspaceMount configuration plus the ../.git bind mount that
-the bare worktree layout needs. Exits silently when the target worktree has no
-devcontainer config.
+Preserves all original devcontainer.json settings and configures the
+workspaceFolder/workspaceMount plus the usermeme worktree devcontainer feature
+(ghcr.io/usermeme/devcontainer-features/worktree:1) that mounts the parent bare
+.git repository, configures Git safe.directory, sets up monorepo cache permissions,
+and auto-repairs container worktree pointers. Exits silently when the target
+worktree has no devcontainer config.
 
 Usage: devcontainer-override.py <target-worktree> [base-worktree]
 """
@@ -15,12 +17,12 @@ import re
 import sys
 from pathlib import Path
 
+WORKTREE_FEATURE = "ghcr.io/usermeme/devcontainer-features/worktree:1"
 WORKSPACE_FOLDER = "/workspaces/${localWorkspaceFolderBasename}"
 WORKSPACE_MOUNT = (
     "source=${localWorkspaceFolder},"
     "target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached"
 )
-GIT_MOUNT = "source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind"
 FALLBACK_IMAGE = "mcr.microsoft.com/devcontainers/javascript-node:24"
 
 
@@ -55,13 +57,40 @@ def parse_jsonc(text: str) -> dict:
     return data if isinstance(data, dict) else {}
 
 
-def has_git_mount(mounts: list) -> bool:
-    for mount in mounts:
-        if isinstance(mount, str) and "target=/workspaces/.git" in mount:
-            return True
-        if isinstance(mount, dict) and mount.get("target") == "/workspaces/.git":
+def has_worktree_feature(features: dict) -> bool:
+    for feat in features:
+        if "devcontainer-features/worktree" in feat or feat.endswith("/worktree") or feat == "worktree":
             return True
     return False
+
+
+def filter_git_mounts(mounts: list) -> list:
+    """Removes manual /workspaces/.git mounts since the worktree feature provides it."""
+    cleaned = []
+    for mount in mounts:
+        if isinstance(mount, str) and "target=/workspaces/.git" in mount:
+            continue
+        if isinstance(mount, dict) and mount.get("target") == "/workspaces/.git":
+            continue
+        cleaned.append(mount)
+    return cleaned
+
+
+def ensure_git_exclude(target: Path) -> None:
+    """Ensure .devcontainer/devcontainer.override.json is in .git/info/exclude of the bare repo."""
+    exclude_file = target.parent / ".git" / "info" / "exclude"
+    if exclude_file.parent.is_dir():
+        pattern = ".devcontainer/devcontainer.override.json"
+        try:
+            content = exclude_file.read_text() if exclude_file.exists() else ""
+            lines = [line.strip() for line in content.splitlines()]
+            if pattern not in lines:
+                with open(exclude_file, "a") as f:
+                    if content and not content.endswith("\n"):
+                        f.write("\n")
+                    f.write(f"{pattern}\n")
+        except OSError:
+            pass
 
 
 def main() -> int:
@@ -88,12 +117,15 @@ def main() -> int:
     data["workspaceFolder"] = WORKSPACE_FOLDER
     data["workspaceMount"] = WORKSPACE_MOUNT
 
-    mounts = data.get("mounts")
-    if not isinstance(mounts, list):
-        mounts = []
-    if not has_git_mount(mounts):
-        mounts.insert(0, GIT_MOUNT)
-    data["mounts"] = mounts
+    features = data.get("features")
+    if not isinstance(features, dict):
+        features = {}
+    if not has_worktree_feature(features):
+        features[WORKTREE_FEATURE] = {}
+    data["features"] = features
+
+    if "mounts" in data and isinstance(data["mounts"], list):
+        data["mounts"] = filter_git_mounts(data["mounts"])
 
     if "image" not in data and "build" not in data and "dockerComposeFile" not in data:
         data["image"] = FALLBACK_IMAGE
@@ -101,6 +133,7 @@ def main() -> int:
     out_file = target / ".devcontainer" / "devcontainer.override.json"
     out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(data, indent=2) + "\n")
+    ensure_git_exclude(target)
     print(f"  ✅ Created: {out_file}")
     return 0
 

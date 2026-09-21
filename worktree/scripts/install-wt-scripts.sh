@@ -28,4 +28,12 @@ if [ ! -f "$DEST/.scripts/copy-list" ]; then
     echo "📝 Created default .scripts/copy-list (copies .env / .env.* files)."
 fi
 
+# Ensure devcontainer.override.json is excluded locally across all worktrees
+if [ -d "$DEST/.git/info" ]; then
+    EXCLUDE_FILE="$DEST/.git/info/exclude"
+    if ! grep -qxF ".devcontainer/devcontainer.override.json" "$EXCLUDE_FILE" 2>/dev/null; then
+        echo ".devcontainer/devcontainer.override.json" >> "$EXCLUDE_FILE"
+    fi
+fi
+
 echo "✅ Installed worktree scripts into '$DEST' (wt-add.sh + .scripts/)."

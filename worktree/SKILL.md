@@ -1,6 +1,6 @@
 ---
 name: worktree
-description: Fully automated management of git repositories using bare worktrees — convert standard repos into the bare layout (.git + main/ + siblings), clone new repos, create sibling worktrees with wt-add.sh (copies per-repo configured files from .scripts/copy-list and generates devcontainer.override.json when a devcontainer exists), and clean up. Use whenever the user asks to work with worktrees, convert a repository to worktrees, add or create a worktree for a branch/feature, configure which files are copied into new worktrees, or clean up worktrees.
+description: Fully automated management of git repositories using bare worktrees — convert standard repos into the bare layout (.git + main/ + siblings), clone new repos, create sibling worktrees with wt-add.sh (copies per-repo configured files from .scripts/copy-list and generates devcontainer.override.json with the usermeme worktree devcontainer feature when a devcontainer exists), and clean up. Use whenever the user asks to work with worktrees, convert a repository to worktrees, add or create a worktree for a branch/feature, configure which files are copied into new worktrees, or clean up worktrees.
 ---
 
 # Automated Bare Git Worktrees
@@ -31,7 +31,7 @@ Execute the bundled scripts directly. Never ask the user to run manual git renam
 
 - Requires a clean tracked tree (untracked files are fine).
 - Preserves **all** untracked files (env files, local configs, `node_modules`) by moving the whole working tree into the primary worktree — nothing is deleted, no reinstall needed.
-- Installs `wt-add.sh` + `.scripts/`, generates the devcontainer override when a devcontainer exists.
+- Installs `wt-add.sh` + `.scripts/`, generates the devcontainer override with the worktree feature when a devcontainer exists.
 - **Afterwards, run the copy-list interview (section 2).**
 
 ### Clone a new repo
@@ -54,7 +54,7 @@ Run from the wrapper root:
 2. Fetches origin (offline-safe), then checks out an existing local/remote branch or creates a new one off the base (`main`/`master` auto-detected).
 3. Sets relative `gitdir` pointers for host/container portability.
 4. Runs `.scripts/copy-worktree-files.sh` — copies the files listed in `.scripts/copy-list` from the base worktree, recreating the directory hierarchy.
-5. Runs `.scripts/devcontainer-override.py` — when a devcontainer config exists, writes `.devcontainer/devcontainer.override.json` preserving all original settings and merging `workspaceFolder`, `workspaceMount`, and the `.git` bind mount.
+5. Runs `.scripts/devcontainer-override.py` — when a devcontainer config exists, writes `.devcontainer/devcontainer.override.json` preserving all original settings, configuring `workspaceFolder` and `workspaceMount`, and injecting the `ghcr.io/usermeme/devcontainer-features/worktree:1` feature.
 
 ### Update installed scripts
 
@@ -102,11 +102,39 @@ The right copy-list differs per repo, so ask the user instead of assuming:
 
 When the user later says "also copy X in this repo", add the pattern to that repo's `.scripts/copy-list`. If `.scripts/` is missing in an older wrapper, re-run `install-wt-scripts.sh` first.
 
-## 3. Invariants & safety rails
+## 3. Devcontainer integration — `usermeme/devcontainer-features`
+
+When a worktree contains a `.devcontainer` configuration, `.scripts/devcontainer-override.py` generates `.devcontainer/devcontainer.override.json` referencing the official worktree feature from [usermeme/devcontainer-features](https://github.com/usermeme/devcontainer-features):
+
+```json
+{
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+  "features": {
+    "ghcr.io/usermeme/devcontainer-features/worktree:1": {}
+  }
+}
+```
+
+### What `ghcr.io/usermeme/devcontainer-features/worktree:1` does:
+- **Mounts the parent `.git`**: Binds `${localWorkspaceFolder}/../.git` to `/workspaces/.git` so containers can access the central bare repository.
+- **Configures Git `safe.directory`**: Automatically runs `git config --global --add safe.directory "*"` to eliminate ownership mismatch errors between host UID and container user UID.
+- **Ensures monorepo cache permissions**: Ensures `/workspaces/.nx` cache directory exists with appropriate permissions.
+- **Auto-repairs container `gitdir` pointers**: If `.git` contains absolute host paths or broken relative links, the feature's `setup-worktree.sh` post-create hook detects and points `.git` to `/workspaces/.git/worktrees/<dir>` and runs `git worktree repair`.
+
+### Feature options:
+| Option | Description | Type | Default |
+|---|---|---|---|
+| `safeDirectory` | Configure Git `safe.directory "*"` for all paths | boolean | `true` |
+| `setupNx` | Ensure `/workspaces/.nx` cache directory exists with proper permissions | boolean | `true` |
+
+Additional features from [usermeme/devcontainer-features](https://github.com/usermeme/devcontainer-features) (such as `dotfiles`, `pnpm`, `yarn`, `antigravity`, `neovim`, and `node-modules-volume`) can also be added into `.devcontainer/devcontainer.override.json` as needed.
+
+## 4. Invariants & safety rails
 
 - **Relative gitdir pointers** (`../.git/worktrees/...` / `../../../<dir>/.git`) keep worktrees portable across host, Docker, and devcontainers.
-- **Devcontainer override**: `.devcontainer/devcontainer.override.json` preserves all original settings and mounts, and merges `workspaceFolder: /workspaces/${localWorkspaceFolderBasename}`, the matching `workspaceMount`, and the `source=${localWorkspaceFolder}/../.git,target=/workspaces/.git,type=bind` mount so containers can see the bare repo.
-- **Copied files stay untracked** — never commit `.env` or other copy-list files ([git-hygiene](../git-hygiene/SKILL.md)).
+- **Devcontainer feature**: Worktree devcontainer support is powered by `ghcr.io/usermeme/devcontainer-features/worktree:1`, ensuring the bare `.git` bind mount, `safe.directory`, cache permissions, and worktree pointer repair are managed reliably without manual configuration drift.
+- **Local overrides stay untracked**: `.devcontainer/devcontainer.override.json` and copied config files must never be committed ([git-hygiene](../git-hygiene/SKILL.md)). They are excluded locally in `.git/info/exclude` (and should be listed in `.gitignore` / `~/.config/git/ignore`).
 - **One worktree per branch** — enforced by git.
 - **Keep the base updated**: `cd main && git pull` before branching.
 - **Port isolation**: run dev servers in sibling worktrees on separate ports.
