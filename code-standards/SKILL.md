@@ -1,6 +1,6 @@
 ---
 name: code-standards
-description: Foundational engineering standards — SOLID, clean code, naming, module organization, error handling, plus TypeScript, React, and slot-based UI composition guidance. Use whenever writing, reviewing, or refactoring code in any language, even for small edits — it defines the naming, file structure, typing, and component patterns every change must follow. For TypeScript, React, or Vue work, also read the matching file in references/.
+description: Foundational coding standards (SOLID, clean code, naming, modularity, error handling) plus TypeScript, React, and layout references. Use when writing new modules, components, or APIs.
 ---
 
 # Code Standards
@@ -67,12 +67,6 @@ Apply SOLID across all modules:
 - **Arrow functions**: `const myFunction = () => {}` over `function` declarations.
 - **`async/await`** over `.then()` chains.
 - **`Promise.all`** for independent async work — never await sequentially what can run in parallel.
-
-## Testing & Delivery
-
-- **TDD**: Write the failing test first when the behavior is well-defined; at minimum, every bug fix starts with a test that reproduces it.
-- **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `chore:`, ….
-- **Small, frequent PRs** — reviewable in one sitting.
 
 ## Self-Audit Before Finishing
 

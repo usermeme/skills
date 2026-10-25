@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: How to review code changes — verified findings over plausible guesses, severity-ranked comments, judgment about what's worth raising vs letting go, calling the smartest model available for review analysis, and spec/ticket coverage checks. Use whenever reviewing a pull request, a diff, a branch, or a teammate's/agent's proposed change; whenever asked to "look over", "check", or "give feedback on" code; and before approving or merging anything. For the security dimension of a review, also read references/security.md.
+description: Code review methodology with verified failure scenarios, severity ranking, and security checks. Use when reviewing a pull request, diff, or branch, or when asked for feedback on code.
 ---
 
 # Code Review
@@ -62,8 +62,4 @@ A ten-comment review where three matter teaches authors to skim. Cap the nits; k
 
 ## 6. Model selection — use the smartest model available
 
-Code review requires maximum critical discernment: catching race conditions, security vulnerabilities, contract drifts, and subtle multi-file interactions while avoiding noisy false alarms.
-
-- **Call the smartest model available**: When delegating review tasks, running review subagents, or evaluating diffs, always invoke the highest capability reasoning model available (e.g., `Model: "pro"` in Antigravity or the top-tier reasoning model in Claude Code / other platforms).
-- **The tool should decide the model**: If the reviewing tool, subagent caller, or orchestrator allows specifying the model, it should actively choose and route code review to the smartest available model rather than inheriting a lightweight execution model.
-- **Why this matters**: Weaker models hallucinate non-existent issues (generating false-positive review fatigue) and overlook real concurrency, edge-case, or data integrity flaws. High-intelligence models construct accurate, concrete failure scenarios and propose actionable fixes.
+When delegating review tasks or spawning review subagents, always select the highest-capability reasoning model available (e.g., `Model: "pro"` in Antigravity or the top-tier reasoning model in Claude Code) rather than inheriting a fast/lightweight model — weaker models hallucinate false positives and miss subtle concurrency or security flaws (see [advising](../advising/SKILL.md)).

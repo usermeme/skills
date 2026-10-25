@@ -1,6 +1,6 @@
 ---
 name: refactoring
-description: Behavior-preserving restructuring done safely — characterization tests before touching untested code, small reversible steps that stay green, strict separation of refactoring from behavior change, and scope control. Use whenever refactoring, restructuring, "cleaning up", extracting modules, renaming across a codebase, paying down tech debt, or preparing code for a feature that doesn't fit its current shape.
+description: Behavior-preserving code restructuring with characterization tests and small, reversible steps. Use when refactoring, extracting modules, renaming across files, or paying down tech debt.
 ---
 
 # Refactoring

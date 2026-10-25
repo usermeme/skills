@@ -1,36 +1,36 @@
 # Skills Monorepo
 
-A collection of agent skills reflecting the engineering standards and patterns of a senior software engineer. Compatible with any agent that supports the SKILL.md format (Claude Code, Gemini CLI, etc.).
+A collection of agent skills reflecting the engineering standards and patterns of a senior software engineer. Compatible with any agent that supports the `SKILL.md` format (Claude Code, Gemini CLI, Antigravity, etc.).
 
 ## Repository Structure
 
-- `code-standards/` — Foundational engineering standards: SOLID, clean code, naming, module organization, and error handling. Language- and framework-specific guidance lives in its references, loaded on demand:
+- `code-standards/` — Foundational coding standards (SOLID, clean code, naming, modularity, error handling) when writing new modules, components, or APIs. Language- and framework-specific guidance lives in its references, loaded on demand:
   - `references/typescript.md` — strict typing, interfaces vs types, type guards, discriminated unions.
   - `references/react.md` — component architecture, hook ordering, predictable hooks and state.
   - `references/slot-based-layout.md` — slot-based UI composition for layouts and dashboards (React & Vue).
-- `agentic-workflow/` — Operating discipline for autonomous coding agents: never guess what a tool can check, verify user-provided facts, clarify with structured questions before assuming, challenge flawed plans, plan-then-approve, visible task tracking, parallel execution of independent work, end-to-end verification before claiming done, outcome-first reporting with a never-end-on-a-promise rule, safety rails around destructive actions. Includes Antigravity-specific mappings (implementation-plan artifacts, task lists, browser verification).
-- `advising/` — Second opinions from independent agents: when to consult (expensive-to-reverse decisions, stuck loops, findings you'll assert), always calling the smartest model available for advisory tasks, how to brief an advisor without contaminating it, adversarial-verification and judge-panel patterns, environment mappings (Claude Code subagents, Antigravity Agent Manager).
-- `testing/` — Tests that catch real regressions: behavior-first testing through public interfaces, what deserves a test, mocking only at boundaries, unit/integration/e2e selection, determinism and flakiness elimination, honest assertions. Stack specifics load on demand:
+- `agentic-workflow/` — Operating discipline for autonomous coding agents (clarify, plan, track, verify, report) at the start of ambiguous or multi-file tasks.
+- `advising/` — Second-opinion protocol using an independent agent on the smartest available model for hard-to-reverse design choices, adversarial verification, or stuck loops.
+- `testing/` — Test design, boundary mocking, level selection, and flakiness prevention when writing, modifying, or reviewing tests. Stack specifics load on demand:
   - `references/typescript.md` — Vitest/Jest, fake timers, MSW at the network boundary, React Testing Library, supertest + real-DB integration patterns, snapshot discipline.
-- `debugging/` — Systematic root-cause debugging: reproduce first (as a failing test), read the actual evidence instead of pattern-matching, one hypothesis per experiment, bisection, no shotgun fixes, and a stuck-loop protocol that hands off to fresh-context advising after two failed attempts.
-- `code-review/` — Reviewing changes: verify findings before asserting (construct the failure scenario), severity taxonomy, what's worth a comment vs what to let go, calling the smartest model available for review tasks, reinvention detection with citations, ticket-coverage checks, reviewing tests and migrations too.
+- `debugging/` — Systematic root-cause debugging (reproduce, observe, hypothesize, falsify) when investigating bugs, flaky tests, or failed fix attempts.
+- `code-review/` — Code review methodology with verified failure scenarios, severity ranking, and security checks when reviewing PRs, diffs, or branches.
   - `references/security.md` — attack-scenario checklist: injection, authn/authz and IDOR, secrets and log leaks, SSRF, unbounded work, XSS/CSRF, TOCTOU, crypto and dependency risk.
-- `git-hygiene/` — Atomic commits (never mix refactor with behavior change), messages whose body explains why, branch discipline, a hard gate that forbids opening a PR while any question is still open, PR descriptions reviewers can act on, and history-safety rules around rebase and force-push.
-- `worktree/` — Working with repositories using bare worktrees: wrapper layout with a bare `.git` and sibling worktrees, creating parallel worktrees from `main`/`master`, recursive `.env` file syncing without `node_modules`, Dev Container worktree feature integration (`usermeme/devcontainer-features`), and safe cleanup.
-- `sql-and-migrations/` — Database discipline ordered by blast radius: expand/migrate/contract migrations, DDL lock awareness, constraints in the database, honest column types, N+1 and indexing, keyset pagination, tight transactions, destructive-statement safety rails.
-- `refactoring/` — Behavior-preserving restructuring: characterization tests before touching untested code, small always-green reversible steps, strict refactor/behavior separation, scope control, and strangler pattern for restructurings too big to slice.
+- `git-hygiene/` — Commit, branch, pull-request, and history-safety discipline when committing, branching, opening PRs, or rewriting history.
+- `worktree/` — Automated management of bare git worktrees, `.env`/config file syncing, and devcontainer overrides (`usermeme/devcontainer-features`).
+- `sql-and-migrations/` — Database discipline for zero-downtime migrations (expand/migrate/contract), DDL locks, schema constraints, and production queries.
+- `refactoring/` — Behavior-preserving code restructuring with characterization tests, small reversible steps, and strict separation from behavior changes.
 
 ## Design
 
-Standards are consolidated into a single `code-standards` skill instead of one skill per language/framework. One skill means one trigger for "writing code", no duplicated or conflicting rules across files, and progressive disclosure: the agent loads only the reference relevant to the code it is writing.
+Standards are consolidated into a single `code-standards` skill instead of one skill per language/framework. One skill means one trigger for writing new code, no duplicated or conflicting rules across files, and progressive disclosure: the agent loads only the reference relevant to the code it is writing.
 
-The same logic applies across skills: `critical-thinking` was merged into `agentic-workflow` because both fired on the same situations (ambiguous tasks, unverified assumptions, weak plans) — two overlapping triggers make the agent's skill selection worse, not better. A skill stays separate only when its trigger conditions are genuinely distinct (e.g. `advising` fires on decisions and stuck loops, not on task start).
+The same logic applies across skills: `critical-thinking` was merged into `agentic-workflow` because both fired on the same situations (ambiguous tasks, unverified assumptions, weak plans) — two overlapping triggers make the agent's skill selection worse, not better. Each skill's frontmatter `description` is kept to two concise sentences (`<what it covers>. Use when <distinct triggers>.`) so the always-loaded catalog stays lightweight and multiple skills do not co-activate unnecessarily.
 
 ## Installation
 
 **Claude Code** — copy or symlink the skill folders into `.claude/skills/` (project scope) or `~/.claude/skills/` (user scope).
 
-**Antigravity** — copy the skill folders into Antigravity's skills directory if your version exposes one (check Settings → Agent). Otherwise, reference them from `AGENTS.md` in the workspace, which Antigravity always reads:
+**Antigravity** — copy or symlink the skill folders into `~/.agents/skills/` (or `.agents/skills/` in a workspace), or reference them from `AGENTS.md`:
 
 ```markdown
 Before starting any non-trivial task, read and follow ~/skills/agentic-workflow/SKILL.md.

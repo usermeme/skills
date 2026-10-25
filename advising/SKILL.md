@@ -1,6 +1,6 @@
 ---
 name: advising
-description: Consult an independent agent for a second opinion before committing to important decisions — reviewing an implementation plan, judging a risky design, adversarially verifying a bug diagnosis or code-review finding, or breaking out of a stuck debugging loop. Always call the smartest model available for advisory tasks. Use whenever a decision is expensive to reverse, whenever you notice you are uncertain but about to proceed anyway, before large refactors, and before presenting conclusions the user will act on. If the environment supports subagents or multiple agent sessions, spawn one using the highest capability model; otherwise simulate the adversarial pass explicitly.
+description: Second-opinion protocol using an independent agent on the smartest available model. Use for hard-to-reverse design choices, adversarial verification of findings, or stuck debugging loops.
 ---
 
 # Advising — Second Opinions from Independent Agents
@@ -21,11 +21,9 @@ Skip it for routine work, reversible details, and anything a test can answer fas
 
 ## Model selection — call the smartest model available
 
-Advisory work is fundamentally a high-cognitive-load reasoning task: it requires dissecting assumptions, identifying subtle edge cases, evaluating architectural trade-offs, and adversarial refutation.
+Advisory work requires dissecting assumptions, spotting subtle edge cases, and resisting sycophancy:
 
-- **Always select the smartest model available** for the advisor. Never use lightweight, economy, or fast models (such as `flash`, `flash_lite`, or `haiku`) for advising. Smaller models are prone to sycophancy, agree with flawed premises, and miss subtle failure modes.
-- **The tool should decide the model**: When the environment or tool allows specifying the model (e.g. `Model: "pro"` in Antigravity's `invoke_subagent`, or top reasoning tier flags in CLI subagent tools), the calling agent/tool should explicitly decide and select the smartest model available rather than defaulting to a fast or inherited lightweight model.
-- If the primary agent is running on a faster model for execution speed, it must step up to the highest capability model whenever consulting an advisor.
+- **Always explicitly select the highest-capability model available** (e.g., `Model: "pro"` in Antigravity's `invoke_subagent` or top-tier reasoning flags in CLI subagent tools), even if the primary agent is running on a faster execution model. Never use lightweight or economy models (`flash`, `flash_lite`, `haiku`), which tend to agree with flawed premises and miss subtle failure modes.
 
 ## How to brief the advisor
 

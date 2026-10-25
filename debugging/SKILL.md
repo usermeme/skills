@@ -1,6 +1,6 @@
 ---
 name: debugging
-description: Systematic root-cause debugging — reproduce first, read the actual evidence, falsify one hypothesis at a time, never shotgun-fix. Use whenever investigating a bug, a failing or flaky test, an error message, unexpected behavior, a production incident, or whenever a fix attempt didn't work and you're about to try another. Especially applies when you feel confident you already know the cause — that's when pattern-matching substitutes for evidence.
+description: Systematic root-cause debugging (reproduce, observe, hypothesize, falsify). Use when investigating a bug, failing or flaky test, unexpected behavior, or after a failed fix attempt.
 ---
 
 # Debugging

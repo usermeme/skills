@@ -1,6 +1,6 @@
 ---
 name: git-hygiene
-description: Commit, branch, and pull-request discipline — atomic commits with honest messages, branch naming, PR descriptions that reviewers can act on, and the safety rules around history rewriting. Use whenever committing work, writing a commit message, creating a branch, opening or describing a pull request, or performing any git operation that touches shared history (rebase, force-push, reset).
+description: Commit, branch, pull-request, and history-safety discipline. Use when committing, writing commit messages, creating branches, opening or describing PRs, or rebasing/rewriting history.
 ---
 
 # Git Hygiene

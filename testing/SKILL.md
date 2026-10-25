@@ -1,6 +1,6 @@
 ---
 name: testing
-description: How to write tests that catch real regressions — what deserves a test, behavior-first structure, mocking only at boundaries, unit vs integration choice, determinism, and honest assertions. Use whenever writing or modifying tests, adding coverage to existing code, fixing a failing or flaky test, writing a regression test for a bug, or implementing a feature that needs tests alongside it — even if the user didn't explicitly ask for tests. For TypeScript, Vitest/Jest, React Testing Library, or Node service tests, also read references/typescript.md.
+description: Test design, boundary mocking, level selection, and flakiness prevention. Use when writing, modifying, or reviewing tests, adding test coverage, or writing a regression test.
 ---
 
 # Testing

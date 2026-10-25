@@ -1,6 +1,6 @@
 ---
 name: sql-and-migrations
-description: Database discipline — safe schema migrations (expand/contract, lock awareness, reversibility), honest schema design with constraints in the database, and query patterns that survive production data volumes (indexing, N+1, keyset pagination, tight transactions). Use whenever writing SQL, designing or altering a schema, writing a migration, investigating a slow query, or reviewing a diff that contains migrations or query changes.
+description: Database discipline for zero-downtime migrations, DDL locks, schema constraints, and production queries. Use when writing SQL, altering schemas, creating migrations, or tuning slow queries.
 ---
 
 # SQL & Migrations

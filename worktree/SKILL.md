@@ -1,6 +1,6 @@
 ---
 name: worktree
-description: Fully automated management of git repositories using bare worktrees — convert standard repos into the bare layout (.git + main/ + siblings), clone new repos, create sibling worktrees with wt-add.sh (copies per-repo configured files from .scripts/copy-list and generates devcontainer.override.json with the usermeme worktree devcontainer feature when a devcontainer exists), and clean up. Use whenever the user asks to work with worktrees, convert a repository to worktrees, add or create a worktree for a branch/feature, configure which files are copied into new worktrees, or clean up worktrees.
+description: Automated management of bare git worktrees, .env/config file syncing, and devcontainer overrides. Use when converting or cloning repos to bare worktrees, adding/removing worktrees, or configuring copied files.
 ---
 
 # Automated Bare Git Worktrees
@@ -133,7 +133,6 @@ Additional features from [usermeme/devcontainer-features](https://github.com/use
 ## 4. Invariants & safety rails
 
 - **Relative gitdir pointers** (`../.git/worktrees/...` / `../../../<dir>/.git`) keep worktrees portable across host, Docker, and devcontainers.
-- **Devcontainer feature**: Worktree devcontainer support is powered by `ghcr.io/usermeme/devcontainer-features/worktree:1`, ensuring the bare `.git` bind mount, `safe.directory`, cache permissions, and worktree pointer repair are managed reliably without manual configuration drift.
 - **Local overrides stay untracked**: `.devcontainer/devcontainer.override.json` and copied config files must never be committed ([git-hygiene](../git-hygiene/SKILL.md)). They are excluded locally in `.git/info/exclude` (and should be listed in `.gitignore` / `~/.config/git/ignore`).
 - **One worktree per branch** — enforced by git.
 - **Keep the base updated**: `cd main && git pull` before branching.
