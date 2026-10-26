@@ -94,7 +94,7 @@ if [ ${#exact_paths[@]} -gt 0 ]; then
         if [ -f "$BASE_DIR/$rel" ]; then
             copy_file "$rel"
         else
-            echo "  ⚠️ In copy-list but not found in base worktree: ./$rel"
+            echo "  ℹ️ In copy-list but not found in base worktree (skipped): ./$rel"
         fi
     done
 fi

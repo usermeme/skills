@@ -5,7 +5,7 @@ set -e
 #   1. checks out an existing local/remote branch, or creates one off the base
 #   2. sets relative gitdir pointers for host/container portability
 #   3. copies the files listed in .scripts/copy-list from the base worktree
-#   4. generates .devcontainer/devcontainer.override.json with the worktree feature when a devcontainer exists
+#      (including .devcontainer/devcontainer.override.json when listed)
 #
 # Usage: ./wt-add.sh <branch-name> [base-branch]
 
@@ -79,12 +79,6 @@ if [ -x "$SCRIPTS_DIR/copy-worktree-files.sh" ]; then
 else
     echo "⚠️ Missing $SCRIPTS_DIR/copy-worktree-files.sh — skipped copying config files."
     echo "   Re-run install-wt-scripts.sh from the worktree skill to restore .scripts/."
-fi
-
-if [ -f "$SCRIPTS_DIR/devcontainer-override.py" ] && command -v python3 >/dev/null 2>&1; then
-    python3 "$SCRIPTS_DIR/devcontainer-override.py" "$DIR_NAME" "$BASE_DIR_NAME"
-elif [ -d "$DIR_NAME/.devcontainer" ] || [ -f "$DIR_NAME/.devcontainer.json" ]; then
-    echo "⚠️ Skipped devcontainer.override.json ($SCRIPTS_DIR/devcontainer-override.py or python3 missing)."
 fi
 
 echo "🎉 Worktree '$BRANCH_NAME' is ready at './$DIR_NAME'!"

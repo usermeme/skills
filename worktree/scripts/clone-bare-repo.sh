@@ -51,10 +51,11 @@ echo "../../../$DEFAULT_DIR/.git" > ".git/worktrees/$DEFAULT_DIR/gitdir"
 
 "$SKILL_SCRIPTS_DIR/install-wt-scripts.sh" .
 
-if command -v python3 >/dev/null 2>&1; then
-    python3 ".scripts/devcontainer-override.py" "$DEFAULT_DIR"
-elif [ -d "$DEFAULT_DIR/.devcontainer" ] || [ -f "$DEFAULT_DIR/.devcontainer.json" ]; then
-    echo "⚠️ Skipped devcontainer.override.json (python3 not found)."
+if [ -d "$DEFAULT_DIR/.devcontainer" ] || [ -f "$DEFAULT_DIR/.devcontainer.json" ]; then
+    echo "🐳 Devcontainer config detected."
+    echo "   Create '$DEFAULT_DIR/.devcontainer/devcontainer.override.json' manually with the"
+    echo "   worktree feature (see the worktree skill, section 3) — it is already listed in"
+    echo "   .scripts/copy-list, so every new worktree will receive it."
 fi
 
 echo "✨ Repository ready at '$TARGET_DIR'!"

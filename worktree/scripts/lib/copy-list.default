@@ -8,3 +8,5 @@
 # node_modules/ and .git/ are always excluded.
 .env
 .env.*
+# Manually created devcontainer override (worktree feature) — copied when present:
+./.devcontainer/devcontainer.override.json

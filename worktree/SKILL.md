@@ -12,9 +12,8 @@ my-project/
 ├── .git/                          # Bare git repository
 ├── .scripts/
 │   ├── copy-list                  # Per-repo config: which files wt-add copies
-│   ├── copy-worktree-files.sh     # Copies the files listed in copy-list
-│   └── devcontainer-override.py   # Generates devcontainer.override.json
-├── wt-add.sh                      # Thin orchestrator: worktree + copy + devcontainer
+│   └── copy-worktree-files.sh     # Copies the files listed in copy-list
+├── wt-add.sh                      # Thin orchestrator: worktree + copy
 ├── main/                          # Primary worktree
 └── feat-auth/                     # Sibling worktree (branch feat/auth)
 ```
@@ -31,8 +30,8 @@ Execute the bundled scripts directly. Never ask the user to run manual git renam
 
 - Requires a clean tracked tree (untracked files are fine).
 - Preserves **all** untracked files (env files, local configs, `node_modules`) by moving the whole working tree into the primary worktree — nothing is deleted, no reinstall needed.
-- Installs `wt-add.sh` + `.scripts/`, generates the devcontainer override with the worktree feature when a devcontainer exists.
-- **Afterwards, run the copy-list interview (section 2).**
+- Installs `wt-add.sh` + `.scripts/`.
+- **Afterwards, run the copy-list interview (section 2)** and, when the repo has a devcontainer, create the override file (section 3).
 
 ### Clone a new repo
 
@@ -40,7 +39,7 @@ Execute the bundled scripts directly. Never ask the user to run manual git renam
 <skill-path>/scripts/clone-bare-repo.sh <repo-url> [target-directory]
 ```
 
-Clones bare, creates the default-branch worktree, installs `wt-add.sh` + `.scripts/`, generates the devcontainer override. **Afterwards, run the copy-list interview (section 2).**
+Clones bare, creates the default-branch worktree, and installs `wt-add.sh` + `.scripts/`. **Afterwards, run the copy-list interview (section 2)** and, when the repo has a devcontainer, create the override file (section 3).
 
 ### Add a worktree
 
@@ -53,8 +52,7 @@ Run from the wrapper root:
 1. Validates the branch name; folder name slugs slashes (`feat/x` → `./feat-x`, branch stays `feat/x`).
 2. Fetches origin (offline-safe), then checks out an existing local/remote branch or creates a new one off the base (`main`/`master` auto-detected).
 3. Sets relative `gitdir` pointers for host/container portability.
-4. Runs `.scripts/copy-worktree-files.sh` — copies the files listed in `.scripts/copy-list` from the base worktree, recreating the directory hierarchy.
-5. Runs `.scripts/devcontainer-override.py` — when a devcontainer config exists, writes `.devcontainer/devcontainer.override.json` preserving all original settings, configuring `workspaceFolder` and `workspaceMount`, and injecting the `ghcr.io/usermeme/devcontainer-features/worktree:1` feature.
+4. Runs `.scripts/copy-worktree-files.sh` — copies the files listed in `.scripts/copy-list` from the base worktree, recreating the directory hierarchy. This includes `.devcontainer/devcontainer.override.json` when it is listed and exists in the base worktree (it is in the default copy-list).
 
 ### Update installed scripts
 
@@ -98,23 +96,33 @@ The right copy-list differs per repo, so ask the user instead of assuming:
    git -C <base-worktree> ls-files --others --ignored --exclude-standard --directory | grep -v '/$'
    ```
 2. Ask the user (AskUserQuestion, multiSelect) which of the detected files/patterns new worktrees should receive, with `.env` / `.env.*` as the recommended default option.
-3. Write the chosen patterns to `.scripts/copy-list`, keeping the format comment header.
+3. Write the chosen patterns to `.scripts/copy-list`, keeping the format comment header. If the repo has a devcontainer, keep the `./.devcontainer/devcontainer.override.json` entry (section 3) in the list.
 
 When the user later says "also copy X in this repo", add the pattern to that repo's `.scripts/copy-list`. If `.scripts/` is missing in an older wrapper, re-run `install-wt-scripts.sh` first.
 
 ## 3. Devcontainer integration — `usermeme/devcontainer-features`
 
-When a worktree contains a `.devcontainer` configuration, `.scripts/devcontainer-override.py` generates `.devcontainer/devcontainer.override.json` referencing the official worktree feature from [usermeme/devcontainer-features](https://github.com/usermeme/devcontainer-features):
+There is no override generator script. When a repo has a devcontainer, the override file is created **manually, once, in the base worktree**, and `wt-add.sh` propagates it to every new worktree through the copy-list (the default copy-list already contains `./.devcontainer/devcontainer.override.json`).
 
-```json
-{
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
-  "features": {
-    "ghcr.io/usermeme/devcontainer-features/worktree:1": {}
-  }
-}
-```
+### Setup (per repo, one-time)
+
+1. Create `<base-worktree>/.devcontainer/devcontainer.override.json`. Start from the original `devcontainer.json` settings (so nothing is lost), then set `workspaceFolder` / `workspaceMount` and add the worktree feature from [usermeme/devcontainer-features](https://github.com/usermeme/devcontainer-features):
+
+   ```json
+   {
+     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+     "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+     "features": {
+       "ghcr.io/usermeme/devcontainer-features/worktree:1": {}
+     }
+   }
+   ```
+
+   Notes:
+   - Remove any manual `target=/workspaces/.git` mounts — the worktree feature provides that mount.
+   - If the config has no `image` / `build` / `dockerComposeFile` of its own, add a fallback such as `"image": "mcr.microsoft.com/devcontainers/javascript-node:24"`.
+2. Make sure `./.devcontainer/devcontainer.override.json` is in `.scripts/copy-list` (the installed default already lists it).
+3. Keep it untracked — `install-wt-scripts.sh` adds `.devcontainer/devcontainer.override.json` to the bare repo's `.git/info/exclude`.
 
 ### What `ghcr.io/usermeme/devcontainer-features/worktree:1` does:
 - **Mounts the parent `.git`**: Binds `${localWorkspaceFolder}/../.git` to `/workspaces/.git` so containers can access the central bare repository.
