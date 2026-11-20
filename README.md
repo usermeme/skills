@@ -4,7 +4,7 @@ A collection of agent skills reflecting the engineering standards and patterns o
 
 ## Repository Structure
 
-- `code-standards/` — Foundational coding standards (SOLID, clean code, naming, modularity, error handling) when writing new modules, components, or APIs. Language- and framework-specific guidance lives in its references, loaded on demand:
+- `code-standards/` — Foundational coding standards (SOLID, clean code, naming, modularity, error handling) applied whenever writing or modifying code in any language. Language- and framework-specific guidance lives in its references, loaded on demand:
   - `references/typescript.md` — strict typing, interfaces vs types, type guards, discriminated unions.
   - `references/react.md` — component architecture, hook ordering, predictable hooks and state.
   - `references/slot-based-layout.md` — slot-based UI composition for layouts and dashboards (React & Vue).

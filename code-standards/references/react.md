@@ -32,4 +32,4 @@ Declare hooks in this order inside a component or custom hook, so every componen
 
 ## Typing
 
-- **No `any`** — same rule as everywhere. If a third-party library has broken types, isolate a safe cast with an `eslint-disable` comment and a technical justification, in one place only.
+- **No `any`** — same rule as everywhere. If a third-party library has broken types, isolate a safe cast with an `eslint-disable-next-line <rule> -- <technical justification>` directive, in one place only.

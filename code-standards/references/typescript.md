@@ -29,7 +29,7 @@ A named element type documents intent and gets reused the moment a second consum
 - **Avoid `as` assertions.** A cast is a promise the compiler can't verify. Instead:
   - **Type guards**: `const isUser = (value: unknown): value is User => …`
   - **Validation libraries** (e.g., Zod) at trust boundaries — API responses, storage, user input.
-  - If a third-party library's types force a cast, isolate it in one place with an `eslint-disable` comment and a one-line technical justification.
+  - If a third-party library's types force a cast, isolate it in one place with an `eslint-disable-next-line <rule> -- <technical justification>` directive (the reason lives inside the directive, not in a separate comment).
 - **Inference first**: Let TypeScript infer local types. Write explicit return types for public APIs and for functions complex enough that the inferred type wouldn't be obvious to a reader.
 
 ## Modeling State & Failures
