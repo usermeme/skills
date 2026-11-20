@@ -56,5 +56,5 @@ Two failed fix attempts is the tripwire. At that point your context is contamina
 
 - **Regression test first-class**: the repro from §1, checked in, failing before the fix and passing after.
 - **Look for siblings**: the same mistake usually exists wherever the same pattern was copied. Search for them now, while you understand the defect exactly.
-- **Record the non-obvious**: if the root cause was surprising (a library quirk, an environmental trap), persist it where the next person will find it — `AGENTS.md`, the runbook, or the JSDoc of the declaration at the trap site stating the constraint (never an inline comment).
+- **Record the non-obvious**: if the root cause was surprising (a library quirk, an environmental trap), persist it where the next person will find it — `AGENTS.md`, the runbook, or the doc-comment (JSDoc/TSDoc or the language's native equivalent) of the declaration at the trap site stating the constraint (never an inline comment).
 - Report faithfully: what the root cause was, what changed, how it was verified. "It seems to work now" is not a debugging outcome.
