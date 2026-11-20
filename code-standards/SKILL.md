@@ -53,7 +53,7 @@ Apply SOLID across all modules:
 
 **Never write inline or block comments.** Code is the single source of truth for intent; a comment is a second source that drifts out of sync and starts lying. This rule overrides "match the surrounding comment density" — existing comments are no license to add more.
 
-- **Allowed**: JSDoc/TSDoc on exported declarations (functions, types, components, modules), and Markdown documents (`README.md`, `AGENTS.md`, ADRs, module docs).
+- **Allowed**: JSDoc/TSDoc on exported declarations (functions, types, components, modules) — or the language's native doc-comment equivalent on declarations (Python docstrings, Go doc comments, Rust `///`) — and Markdown documents (`README.md`, `AGENTS.md`, ADRs, module docs).
 - **Allowed only as tooling directives**: `eslint-disable-next-line <rule> -- <reason>`, `@ts-expect-error <reason>`, and similar — the justification goes inside the directive, never on a separate comment line.
 - **Forbidden**: comments that narrate what the code does, `TODO`/`FIXME` notes (open an issue instead), section dividers, commented-out code, and change notes addressed to a reviewer.
 - **When you feel the urge to comment**, fix the code instead: rename the variable, extract a well-named function or constant, introduce a type, or add a test that pins the behavior. A non-obvious constraint (library quirk, ordering requirement) goes in the JSDoc of the declaration it constrains or in the module's Markdown doc.
