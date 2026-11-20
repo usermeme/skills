@@ -1,11 +1,11 @@
 ---
 name: code-standards
-description: Foundational coding standards (SOLID, clean code, naming, modularity, error handling) plus TypeScript, React, and layout references. Use when writing new modules, components, or APIs.
+description: Foundational coding standards (SOLID, clean code, naming, modularity, error handling) plus TypeScript, React, and layout references. Use whenever writing or modifying code in any language — features, fixes, refactors, scripts, or tests.
 ---
 
 # Code Standards
 
-Foundational coding standards for a workspace maintained by a senior full-stack engineer specializing in TypeScript. The goal behind every rule here is the same: code that another senior engineer can read once and immediately understand.
+Foundational coding standards for a workspace maintained by a senior full-stack engineer specializing in TypeScript. They apply to every line of code you write or change, in any language — not only new modules; TypeScript and React specifics live in the references. The goal behind every rule here is the same: code that another senior engineer can read once and immediately understand.
 
 **Precedence**: Project-specific instructions and existing project patterns always override this skill. Consistency within a codebase beats consistency with this document.
 
@@ -49,6 +49,15 @@ Apply SOLID across all modules:
 - **Descriptive names, always**: Never `e`, `t`, `i`, `val`, `data`. Write `event`, `translation`, `index`, `exerciseValue`, `completedExercises`. The name should make a comment unnecessary.
 - **Booleans**: Adjectives describing state — best: `opened`, `completed`, `visible`; acceptable: `isVisible`, `hasErrors`.
 
+## Comments — Hard Rule
+
+**Never write inline or block comments.** Code is the single source of truth for intent; a comment is a second source that drifts out of sync and starts lying. This rule overrides "match the surrounding comment density" — existing comments are no license to add more.
+
+- **Allowed**: JSDoc/TSDoc on exported declarations (functions, types, components, modules), and Markdown documents (`README.md`, `AGENTS.md`, ADRs, module docs).
+- **Allowed only as tooling directives**: `eslint-disable-next-line <rule> -- <reason>`, `@ts-expect-error <reason>`, and similar — the justification goes inside the directive, never on a separate comment line.
+- **Forbidden**: comments that narrate what the code does, `TODO`/`FIXME` notes (open an issue instead), section dividers, commented-out code, and change notes addressed to a reviewer.
+- **When you feel the urge to comment**, fix the code instead: rename the variable, extract a well-named function or constant, introduce a type, or add a test that pins the behavior. A non-obvious constraint (library quirk, ordering requirement) goes in the JSDoc of the declaration it constrains or in the module's Markdown doc.
+
 ## Organization & Modularity
 
 - **Named exports only** — they survive renames, enable reliable find-references, and keep imports honest.
@@ -71,5 +80,5 @@ Apply SOLID across all modules:
 ## Self-Audit Before Finishing
 
 1. Do any new functions violate SRP (e.g., calculate **and** store)? Split them.
-2. Are all names descriptive enough that a comment isn't needed?
+2. Does the diff contain any comment other than JSDoc or a tooling directive? Delete it and make the code say it.
 3. Would another senior engineer understand the intent on first read?

@@ -44,5 +44,5 @@ Refactoring generates its own todo list as you go — that's a trap.
 
 - Changing a public interface isn't pure refactoring — it has consumers. Migrate callers in the same change if internal; version/deprecate first if external.
 - **Delete dead code; never comment it out.** Git remembers everything — the commented block just lies to every future reader about being potentially needed.
-- After the refactor: names still honest? Docs/comments referencing the old shape updated? `AGENTS.md`/module docs mention the new home if the move is non-obvious?
+- After the refactor: names still honest? JSDoc/Markdown docs referencing the old shape updated? `AGENTS.md`/module docs mention the new home if the move is non-obvious?
 - Verify beyond the unit tests before calling it done — run the real flow the code serves ([agentic-workflow](../agentic-workflow/SKILL.md) §6); structure moved, wiring is where refactors actually break.

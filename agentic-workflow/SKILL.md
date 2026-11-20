@@ -77,8 +77,8 @@ The task list is not bureaucracy — it is how the user supervises an autonomous
 
 - **Parallelize independent work.** File reads, searches, and independent checks with no dependency between them fire as one batch, not a sequence — same for independent subagents. Sequential execution of independent steps is pure wasted wall-clock.
 - Once a fact is established or a decision made, **don't re-derive or re-litigate it**. Re-checking what the conversation already settled burns context and time; move forward.
-- Match the codebase: comment density, naming, idioms, error handling. New code should read like the surrounding code wrote it.
-- Comments state constraints the code can't show — never narrate what the next line does or justify the change to a reviewer.
+- Match the codebase: naming, idioms, error handling. New code should read like the surrounding code wrote it.
+- **Never write code comments** — only JSDoc on declarations or Markdown docs; the code is the source of truth. See [code-standards](../code-standards/SKILL.md) § Comments — Hard Rule.
 - Fix errors as they appear. A typecheck or test failure you noticed and deferred is a broken promise to your future self.
 - About to write code you're not sure about? Stop — that uncertainty is the signal to investigate (read the types, run the snippet, check the docs), not to write hopeful code and see if it works.
 - When blocked, gather the missing information yourself (read more code, run the tool, check the logs) before asking. Come back with findings, not open questions.
